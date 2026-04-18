@@ -1,22 +1,13 @@
-// ID: 816040879
-// ASSIGNMENT: 1
-// COURSE: COMP 3609 - Game Programming
-
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 
-/**
-   A component that displays all the game entities
-*/
-
-// Honestly I think I used lab 4  more than GamePanel-Bat-Alien-Images lab 3 for A1
-public class GamePanel extends JPanel {
+public class GamePanel extends JPanel implements Runnable {
 
     private static int MAX_MONSTERS = 14;
 
@@ -29,18 +20,15 @@ public class GamePanel extends JPanel {
     private boolean gameStarted;
     private boolean isRunning;
 
-    private Timer gameTimer;
-    
+    private Thread gameThread;
+    private BufferedImage image;
 
-    // I am sure you probably wanted these in gameWindow but I just felt it was easier to do this
     private JLabel scoreLabel;
     private JLabel waveLabel;
     private int currentWave;
     private Random random;
 
     public GamePanel() {
-      
-
 
         scoreLabel = new JLabel("Score: 0");
         waveLabel = new JLabel("Wave: 0");
@@ -50,7 +38,7 @@ public class GamePanel extends JPanel {
 
         player = null;
         activeMonsters = null;
-      
+
         gameStarted = false;
         isRunning = false;
 
@@ -58,16 +46,12 @@ public class GamePanel extends JPanel {
         random = new Random();
     }
 
-    // Initializes the player and treasure, sets up monster and bullet lists, and spawns the first monster wave.
     public void createGameEntities() {
         player = new Player(this, getWidth() / 2, 350);
-        treasure = new Treasure(this, getWidth() / 2, 330);
+        treasure = new Treasure(getWidth() / 2, 330);
 
         activeMonsters = new ArrayList<>();
         bullets = new ArrayList<>();
-      
-
-    
     }
 
     private void spawnWave() {
@@ -81,12 +65,8 @@ public class GamePanel extends JPanel {
 
         for (int i = 0; i < waveSize; i++) {
             int spawnSide = random.nextInt(2);
-            // To make the game a bit more interesting, monsters can from both sides so. Terraria style :).
             int xPos = (spawnSide == 0) ? -50 : getWidth() + 50;
 
-
-            // I love having to resubmit late because i forgot I made it only aliens could spawn : D
-            // I'll take the L yes 
             if (random.nextInt(2) == 0) {
                 activeMonsters.add(new Snake(this, xPos, 350, player, treasure));
             } else {
@@ -95,7 +75,6 @@ public class GamePanel extends JPanel {
         }
     }
 
-    // Updates game state
     public void gameUpdate() {
 
         if (treasure != null && treasure.isDestroyed()) {
@@ -143,9 +122,9 @@ public class GamePanel extends JPanel {
                 }
             }
 
-             if(monstersKilled >= MAX_MONSTERS) {
+            if (monstersKilled >= MAX_MONSTERS) {
                 isRunning = false;
-                waveLabel.setText("You win at wave " + currentWave +  "! ");
+                waveLabel.setText("You win at wave " + currentWave + "! ");
                 scoreLabel.setText("  With a final Score: " + monstersKilled);
                 stopGame();
                 return;
@@ -168,54 +147,60 @@ public class GamePanel extends JPanel {
 
     public void shootBullet(int direction) {
         if (player != null) {
-
             bullets.add(player.shoot(direction));
             soundManager.playClip("shoot", false);
         }
     }
 
-    // Rendering
     public void gameRender() {
-        Graphics g = getGraphics();
-        if (g == null) return;
+        Graphics2D imageContext = (Graphics2D) image.getGraphics();
 
-        g.setColor(new Color(135, 206, 235));
-        g.fillRect(0, 0, getWidth(), getHeight());
+        imageContext.setColor(new Color(135, 206, 235));
+        imageContext.fillRect(0, 0, getWidth(), getHeight());
 
-        g.setColor(new Color(155, 118, 83));  
-        g.fillRect(0, 390, getWidth(), getHeight() - 390);
+        imageContext.setColor(new Color(155, 118, 83));
+        imageContext.fillRect(0, 390, getWidth(), getHeight() - 390);
 
-        if (treasure != null) treasure.draw();
-        if (player != null) player.draw();
+        if (treasure != null) treasure.draw(imageContext);
+        if (player != null) player.draw(imageContext);
 
         for (Monster monster : activeMonsters) {
-            monster.draw();
+            monster.draw(imageContext);
         }
 
         for (Bullet bullet : bullets) {
-            bullet.draw();
+            bullet.draw(imageContext);
         }
 
-        paintChildren(g);
-        g.dispose();
+        Graphics2D g2 = (Graphics2D) getGraphics();
+        if (g2 != null) {
+            g2.drawImage(image, 0, 0, getWidth(), getHeight(), null);
+            paintChildren(g2);
+            g2.dispose();
+        }
+
+        imageContext.dispose();
     }
 
-    // Start game using Swing Timer, threading got me weird results so I just went with this.
+    public void run() {
+        try {
+            isRunning = true;
+            while (isRunning) {
+                gameUpdate();
+                gameRender();
+                Thread.sleep(50);
+            }
+        } catch (InterruptedException e) {}
+    }
+
     public void startGame() {
         if (!gameStarted) {
-
+            image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
             isRunning = true;
-
-            gameTimer = new Timer(50, e -> {
-                if (isRunning) {
-                    gameUpdate();
-                    gameRender();
-                }
-            });
-
-            gameTimer.start();
-            soundManager.playClip("background", true);
             gameStarted = true;
+            soundManager.playClip("background", true);
+            gameThread = new Thread(this);
+            gameThread.start();
         }
     }
 
@@ -225,16 +210,10 @@ public class GamePanel extends JPanel {
 
     public void stopGame() {
         isRunning = false;
-        if (gameTimer != null) {
-            gameTimer.stop();
-                  soundManager.stopClip("background");
-
+        if (gameThread != null) {
+            soundManager.stopClip("background");
         }
-    }  
-    
-    
-    
-
+    }
 
     public JLabel getScoreLabel() {
         return scoreLabel;
@@ -243,6 +222,4 @@ public class GamePanel extends JPanel {
     public JLabel getWaveLabel() {
         return waveLabel;
     }
-
-
 }
