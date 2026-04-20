@@ -24,13 +24,13 @@ public class ShadowWalker extends Monster {
         isInvisible = false;
         visibilityTimer = VISIBLE_DURATION;
 
-        walkLeftAnimation = new Animation();
+        walkLeftAnimation = new Animation(true);
         walkLeftAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_left_1.png"), 100);
         walkLeftAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_left_2.png"), 100);
         walkLeftAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_left_3.png"), 100);
         walkLeftAnimation.start();
 
-        walkRightAnimation = new Animation();
+        walkRightAnimation = new Animation(true);
         walkRightAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_right_1.png"), 100);
         walkRightAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_right_2.png"), 100);
         walkRightAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_right_3.png"), 100);

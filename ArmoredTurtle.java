@@ -16,8 +16,8 @@ public class ArmoredTurtle extends Monster {
         dy = 0;
         hp = 250;
 
-        walkLeftAnimation = new Animation();
-        walkRightAnimation = new Animation();
+        walkLeftAnimation = new Animation(true);
+        walkRightAnimation = new Animation(true);
 
         for (int i = 1; i <= 8; i++) {
             walkLeftAnimation.addFrame(ImageManager.loadImage("images/armored_turtle/armored_turtle_left_" + i + ".png"), 100);
