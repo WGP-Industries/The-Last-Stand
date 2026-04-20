@@ -12,6 +12,10 @@ public class Animation {
     private boolean loop;
     private boolean isActive;
 
+    public Animation() {
+        this(true);
+    }
+
     public Animation(boolean loop) {
         frames = new ArrayList<AnimFrame>();
         totalDuration = 0;
