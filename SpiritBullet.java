@@ -5,7 +5,7 @@ public class SpiritBullet extends AnimatedBullet {
     private static final int PUSH_AMOUNT = 160;
 
     public SpiritBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "wind_bullet.png", 4, 2, 80);
+        super(panel, xPos, yPos, "images/bullets/wind_bullet.png", 4, 2, 80);
         damage = 5;
     }
 

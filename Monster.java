@@ -69,7 +69,7 @@ public abstract class Monster {
         }
     }
 
-    private void applyStatusEffects() {
+    protected void applyStatusEffects() {
         // Burn
         if (burning && !isDead()) {
             burnStepCounter++;
@@ -110,6 +110,9 @@ public abstract class Monster {
     }
 
 
+    public boolean isBurning() { return burning; }
+    public boolean isFrozen()  { return frozen;  }
+
     public void push(int amount) {
         int travelDir = frozen ? savedDx : dx;
         if (travelDir < 0) {
@@ -119,10 +122,7 @@ public abstract class Monster {
         }
     }
 
-    public void respawnPublic() {
-        respawn();
-    }
-
+ 
     public void draw(Graphics2D g2) {
         if (dx <= 0) {
             g2.drawImage(monsterImageRight, x + width, y, -width, height, null);
@@ -158,7 +158,7 @@ public abstract class Monster {
             dx     = savedDx;
         }
         x = (dx < 0) ? panelWidth + 50 : -50;
-        y = 350;
+        y = getY();
         soundManager.playClip("appear", false);
     }
 

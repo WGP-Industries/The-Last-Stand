@@ -76,28 +76,30 @@ public class Player {
         }
     }
 
-    public Bullet shoot(int mouseX, int mouseY) {
-        // Spawn point: horizontal centre, vertical centre of the player sprite (whange when we make a new sprite)
-        int spawnX = x + width  / 2;
-        int spawnY = y + height / 2;
+public Bullet shoot(int mouseX, int mouseY) {
 
-        double dirX = mouseX - spawnX;
-        double dirY = mouseY - spawnY;
+    boolean shootingLeft = mouseX < x + width / 2;
 
-        double length = Math.hypot(dirX, dirY);
-        if (length == 0) length = 1;
-        dirX /= length;
-        dirY /= length;
+    // Spawn point depends on direction
+    int spawnX = shootingLeft ? x - width : x + width;
+    int spawnY = y;
 
-        // Flip sprite based on horizontal mouse direction
-        playerImage = (mouseX < x + width / 2) ? playerLeftImage : playerRightImage;
+    double dirX = mouseX - spawnX;
+    double dirY = mouseY - spawnY;
 
-        Bullet bullet = createBullet(spawnX, spawnY);
+    double length = Math.hypot(dirX, dirY);
+    if (length == 0) length = 1;
+    dirX /= length;
+    dirY /= length;
 
-        bullet.setVelocity(dirX * bullet.getSpeed(), dirY * bullet.getSpeed());
+    // Flip sprite
+    playerImage = shootingLeft ? playerLeftImage : playerRightImage;
 
-        return bullet;
-    }
+    Bullet bullet = createBullet(spawnX, spawnY);
+    bullet.setVelocity(dirX * bullet.getSpeed(), dirY * bullet.getSpeed());
+
+    return bullet;
+}
 
     private Bullet createBullet(int bx, int by) {
         switch (currentBulletType) {

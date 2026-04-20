@@ -6,7 +6,7 @@ public class FireBullet extends AnimatedBullet {
     private static final int BURN_STEPS        = 6;
 
     public FireBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "fire_bullet.png", 4, 80);
+        super(panel, xPos, yPos, "images/bullets/fire_bullet.png", 4, 80);
         damage = 10;
     }
 
@@ -15,7 +15,8 @@ public class FireBullet extends AnimatedBullet {
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
-        target.takeDamage(damage);
+        int actualDamage = (target instanceof SplitSlime) ? damage * 2 : damage;
+        target.takeDamage(actualDamage);
         target.applyBurn(BURN_DMG_PER_STEP, BURN_STEPS);
     }
 }

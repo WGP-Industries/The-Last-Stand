@@ -3,7 +3,7 @@ import javax.swing.JPanel;
 
 public class RapidBullet extends AnimatedBullet {
     public RapidBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "bullet.png", 8, 60);
+        super(panel, xPos, yPos, "images/bullets/bullet.png", 8, 60);
         damage = 12;
     }
 

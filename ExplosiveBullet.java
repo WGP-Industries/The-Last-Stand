@@ -18,7 +18,7 @@ public class ExplosiveBullet extends AnimatedBullet {
 
     @Override public double  getSpeed()    { return 7; }
     @Override public int     getCooldown() { return 1200; }
-    @Override public boolean isPiercing()  { return true; } // handles own lifecycle
+    @Override public boolean isPiercing()  { return true; }
 
     @Override
     public void move() {
@@ -62,6 +62,9 @@ public class ExplosiveBullet extends AnimatedBullet {
             double mx = m.getX() + m.getBoundingRectangle().width  / 2.0;
             double my = m.getY() + m.getBoundingRectangle().height / 2.0;
             if (Math.hypot(mx - cx, my - cy) <= EXPLOSION_RADIUS) {
+                if (m instanceof SplitSlime && !(m instanceof MiniSlime)) {
+                    ((SplitSlime) m).preventSplit();
+                }
                 m.takeDamage(damage);
             }
         }

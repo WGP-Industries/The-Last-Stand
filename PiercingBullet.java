@@ -7,7 +7,7 @@ public class PiercingBullet extends AnimatedBullet {
     private final Set<Monster> hitMonsters = new HashSet<>();
 
     public PiercingBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "bullet.png", 8, 80);
+        super(panel, xPos, yPos, "images/bullets/bullet.png", 8, 80);
         damage = 20;
     }
 

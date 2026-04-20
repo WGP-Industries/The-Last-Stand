@@ -3,7 +3,7 @@ import javax.swing.JPanel;
 
 public class TeleportBullet extends AnimatedBullet {
     public TeleportBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "space_bullet.png", 3, 80);
+        super(panel, xPos, yPos, "images/bullets/space_bullet.png", 3, 80);
         damage = 0;
     }
 
@@ -12,6 +12,6 @@ public class TeleportBullet extends AnimatedBullet {
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
-        target.respawnPublic();
+        target.respawn();
     }
 }
