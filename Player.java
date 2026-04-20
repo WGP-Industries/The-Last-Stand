@@ -37,8 +37,8 @@ public class Player {
         width = 50;
         height = 50;
 
-        playerLeftImage = ImageManager.loadImage("player_left.png");
-        playerRightImage = ImageManager.loadImage("player_right.png");
+        playerLeftImage = ImageManager.loadImage("images/player_left.png");
+        playerRightImage = ImageManager.loadImage("images/player_right.png");
 
         playerImage = playerRightImage;
     }

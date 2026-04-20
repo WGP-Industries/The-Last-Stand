@@ -13,7 +13,7 @@ public class Treasure {
         size = 40;
         x = xPos - size / 2;
         y = yPos;
-        maxHp = 100;
+        maxHp = 400;
         hp = maxHp;
         destroyed = false;
     }

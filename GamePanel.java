@@ -67,10 +67,19 @@ public class GamePanel extends JPanel implements Runnable {
             int spawnSide = random.nextInt(2);
             int xPos = (spawnSide == 0) ? -50 : getWidth() + 50;
 
-            if (random.nextInt(2) == 0) {
+            int monsterType = 3;
+            if (monsterType == 0) {
                 activeMonsters.add(new Snake(this, xPos, 350, player, treasure));
-            } else {
+            } else if (monsterType == 1) {
                 activeMonsters.add(new Ghost(this, xPos, 350, player, treasure));
+            } else if (monsterType == 2) {
+                activeMonsters.add(new ArmoredTurtle(this, xPos, 350, player, treasure));
+            }
+            else if (monsterType == 3) {
+                activeMonsters.add(new FireImp(this, xPos, 350, player, treasure));
+            }
+             else {
+                activeMonsters.add(new ShadowWalker(this, xPos, 350, player, treasure));
             }
         }
     }

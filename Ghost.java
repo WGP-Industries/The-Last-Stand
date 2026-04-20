@@ -14,8 +14,8 @@ public class Ghost extends Monster {
             dy = 0;
             hp = 50;
             
-            monsterImageLeft = ImageManager.loadImage("ghost.png");
-            monsterImageRight = ImageManager.loadImage("ghost.png");
+            monsterImageLeft = ImageManager.loadImage("images/ghost.png");
+            monsterImageRight = ImageManager.loadImage("images/ghost.png");
         }
         
         @Override

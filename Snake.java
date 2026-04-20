@@ -11,8 +11,8 @@ public class Snake extends Monster {
         dx = (xPos < 0) ? 3 : -3;
         dy = 0;
         hp = 100;
-        monsterImageRight = ImageManager.loadImage("snake.png");
-        monsterImageLeft = ImageManager.loadImage("snake.png");
+        monsterImageRight = ImageManager.loadImage("images/snake.png");
+        monsterImageLeft = ImageManager.loadImage("images/snake.png");
 
     }
 
