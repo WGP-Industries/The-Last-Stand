@@ -1,48 +1,26 @@
-
-// import statements
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
 public class GameWindow extends JFrame
-implements ActionListener,
-KeyListener,
-MouseListener {
-    // declare instance variables for user interface objects
-
-    // declare text fields
-
-
-
-
-    // declare buttons
+        implements ActionListener, KeyListener, MouseListener, MouseMotionListener {
 
     private JButton startB;
     private JButton exitB;
 
     private Container c;
-
     private JPanel mainPanel;
     private GamePanel gamePanel;
+
+    private int mouseX = 400;
+    private int mouseY = 375;
+
     private int playerDirection = 2;
 
-    @SuppressWarnings({
-        "unchecked"
-    })
     public GameWindow() {
-
         setTitle("Treasure Defender");
         setSize(800, 520);
-
         setLocationRelativeTo(null);
-
-        // create user interface objects
-
-
-
-
-
-        // create buttons
 
         startB = new JButton("Start Game");
 
@@ -68,30 +46,19 @@ MouseListener {
         gamePanel = new GamePanel();
         gamePanel.setPreferredSize(new Dimension(800, 400));
 
+        // HUD
+        JPanel infoPanel = new JPanel();
+        infoPanel.setBackground(Color.ORANGE);
+        infoPanel.setPreferredSize(new Dimension(800, 30));
+        infoPanel.add(gamePanel.getWaveLabel());
+        infoPanel.add(Box.createHorizontalStrut(40));
+        infoPanel.add(gamePanel.getScoreLabel());
+        infoPanel.add(Box.createHorizontalStrut(40));
+        infoPanel.add(gamePanel.getBulletLabel());
 
-
-        // create infoPanel
-
-		JPanel infoPanel = new JPanel();
-		infoPanel.setBackground(Color.ORANGE);
-		infoPanel.setPreferredSize(new Dimension(800, 30));
-
-		infoPanel.add(gamePanel.getWaveLabel());
-		infoPanel.add(Box.createHorizontalStrut(100));
-		infoPanel.add(gamePanel.getScoreLabel());
-
-
-        // create buttonPanel
-
-        JPanel buttonPanel = new JPanel();
-        gridLayout = new GridLayout(1, 4);
-        buttonPanel.setLayout(gridLayout);
-
-        // add buttons to buttonPanel
-
+        // Buttons
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
         buttonPanel.add(startB);
-
-
         buttonPanel.add(exitB);
 
         // add sub panels with GUI objects to mainPanel and set its colour
@@ -102,39 +69,25 @@ MouseListener {
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);	
         mainPanel.setBackground(Color.GRAY);
 
-        // set up mainPanel to respond to keyboard and mouse
-
+        gamePanel.addMouseMotionListener(this);
         gamePanel.addMouseListener(this);
         mainPanel.addKeyListener(this);
-
-
-
-        // add mainPanel to window surface
 
         c = getContentPane();
         c.add(mainPanel);
 
-        // set properties of window
-
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         setVisible(true);
-
-        // create game entities
 
         gamePanel.createGameEntities();
 
-
-
-        // ensure keyboard focus
         mainPanel.setFocusable(true);
         mainPanel.requestFocusInWindow();
     }
 
 
-    // implement single method in ActionListener interface
-
+    @Override
     public void actionPerformed(ActionEvent e) {
 
         String command = e.getActionCommand();
@@ -153,40 +106,65 @@ MouseListener {
 
     // implement methods in KeyListener interface
 
+    @Override
     public void keyPressed(KeyEvent e) {
-        int keyCode = e.getKeyCode();
+        switch (e.getKeyCode()) {
 
-
-        switch (keyCode) {
+            // Movement
             case KeyEvent.VK_LEFT:
                 playerDirection = 1;
                 gamePanel.updatePlayer(playerDirection);
                 break;
-
             case KeyEvent.VK_RIGHT:
                 playerDirection = 2;
                 gamePanel.updatePlayer(playerDirection);
                 break;
 
+            // Fire toward current mouse position
             case KeyEvent.VK_SPACE:
-                gamePanel.shootBullet(playerDirection);
+                gamePanel.shootBullet(mouseX, mouseY);
                 break;
+
+            // Bullet type selection (1–9)
+            case KeyEvent.VK_1: gamePanel.setBulletType(BulletType.BASIC);     break;
+            case KeyEvent.VK_2: gamePanel.setBulletType(BulletType.FIRE);      break;
+            case KeyEvent.VK_3: gamePanel.setBulletType(BulletType.FREEZE);    break;
+            case KeyEvent.VK_4: gamePanel.setBulletType(BulletType.ELECTRIC);  break;
+            case KeyEvent.VK_5: gamePanel.setBulletType(BulletType.SPIRIT);    break;
+            case KeyEvent.VK_6: gamePanel.setBulletType(BulletType.RAPID);     break;
+            case KeyEvent.VK_7: gamePanel.setBulletType(BulletType.PIERCING);  break;
+            case KeyEvent.VK_8: gamePanel.setBulletType(BulletType.EXPLOSIVE); break;
+            case KeyEvent.VK_9: gamePanel.setBulletType(BulletType.TELEPORT);  break;
         }
     }
 
+    @Override public void keyReleased(KeyEvent e) {}
+    @Override public void keyTyped   (KeyEvent e) {}
 
-    public void keyReleased(KeyEvent e) {}
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        mouseX = e.getX();
+        mouseY = e.getY();
+    }
 
-    public void keyTyped(KeyEvent e) {}
-
-    // implement methods in MouseListener interface
-
-    public void mouseClicked(MouseEvent e) {}
-    public void mouseEntered(MouseEvent e) {}
-    public void mouseExited(MouseEvent e) {}
-    public void mousePressed(MouseEvent e) {}
-    public void mouseReleased(MouseEvent e) {}
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        mouseX = e.getX();
+        mouseY = e.getY();
+        gamePanel.shootBullet(mouseX, mouseY);
+    }
 
 
+    @Override
+    public void mousePressed(MouseEvent e) {
+        mouseX = e.getX();
+        mouseY = e.getY();
+        gamePanel.shootBullet(mouseX, mouseY);
+        mainPanel.requestFocusInWindow(); // keep keyboard focus after clicking
+    }
 
+    @Override public void mouseClicked (MouseEvent e) {}
+    @Override public void mouseReleased(MouseEvent e) {}
+    @Override public void mouseEntered (MouseEvent e) {}
+    @Override public void mouseExited  (MouseEvent e) {}
 }

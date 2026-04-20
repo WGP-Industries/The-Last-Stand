@@ -1,8 +1,8 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -20,20 +20,23 @@ public class GamePanel extends JPanel implements Runnable {
     private boolean gameStarted;
     private boolean isRunning;
 
-    private Thread gameThread;
+    private Thread        gameThread;
     private BufferedImage image;
 
     private JLabel scoreLabel;
     private JLabel waveLabel;
+    private JLabel bulletLabel;
     private int currentWave;
     private Random random;
 
+    private long lastShotTime = 0;
+
     public GamePanel() {
+        scoreLabel  = new JLabel("Score: 0");
+        waveLabel   = new JLabel("Wave: 0");
+        bulletLabel = new JLabel("Bullet: BASIC  [1-9 to switch]");
 
-        scoreLabel = new JLabel("Score: 0");
-        waveLabel = new JLabel("Wave: 0");
-
-        currentWave = 0;
+        currentWave    = 0;
         monstersKilled = 0;
 
         player = null;
@@ -66,7 +69,6 @@ public class GamePanel extends JPanel implements Runnable {
         for (int i = 0; i < waveSize; i++) {
             int spawnSide = random.nextInt(2);
             int xPos = (spawnSide == 0) ? -50 : getWidth() + 50;
-
             if (random.nextInt(2) == 0) {
                 activeMonsters.add(new Snake(this, xPos, 350, player, treasure));
             } else {
@@ -76,7 +78,6 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void gameUpdate() {
-
         if (treasure != null && treasure.isDestroyed()) {
             isRunning = false;
             waveLabel.setText("Game over at wave: " + currentWave + "! ");
@@ -86,91 +87,94 @@ public class GamePanel extends JPanel implements Runnable {
         }
 
         try {
-            for (int i = activeMonsters.size() - 1; i >= 0; i--) {
-                Monster monster = activeMonsters.get(i);
-                monster.move();
-            }
+            for (Monster monster : activeMonsters) monster.move();
 
-            for (int i = bullets.size() - 1; i >= 0; i--) {
-                Bullet bullet = bullets.get(i);
+            Iterator<Bullet> bulletIter = bullets.iterator();
+            while (bulletIter.hasNext()) {
+                Bullet bullet = bulletIter.next();
                 bullet.move();
 
                 if (!bullet.isActive()) {
-                    bullets.remove(i);
+                    bulletIter.remove();
                     continue;
                 }
 
-                for (int j = activeMonsters.size() - 1; j >= 0; j--) {
-                    Monster monster = activeMonsters.get(j);
-
-                    if (!monster.isDead()) {
-                        Rectangle2D.Double bulletRect = bullet.getBoundingRectangle();
-                        Rectangle2D.Double monsterRect = monster.getBoundingRectangle();
-
-                        if (bulletRect.intersects(monsterRect)) {
-                            monster.takeDamage(bullet.getDamage());
-                            bullets.remove(i);
-
-                            if (monster.isDead()) {
-                                activeMonsters.remove(j);
-                                monstersKilled++;
-                                scoreLabel.setText("Score: " + monstersKilled);
-                            }
+                boolean consumed = false;
+                for (Monster monster : activeMonsters) {
+                    if (monster.isDead()) continue;
+                    if (bullet.getBoundingRectangle().intersects(monster.getBoundingRectangle())) {
+                        bullet.onHit(monster, activeMonsters);
+                        if (!bullet.isPiercing()) {
+                            consumed = true;
                             break;
                         }
                     }
                 }
+                if (consumed) bulletIter.remove();
             }
 
+            Iterator<Monster> monsterIter = activeMonsters.iterator();
+            while (monsterIter.hasNext()) {
+                if (monsterIter.next().isDead()) {
+                    monsterIter.remove();
+                    monstersKilled++;
+                }
+            }
+            scoreLabel.setText("Score: " + monstersKilled);
+
             if (monstersKilled >= MAX_MONSTERS) {
-                isRunning = false;
-                waveLabel.setText("You win at wave " + currentWave + "! ");
-                scoreLabel.setText("  With a final Score: " + monstersKilled);
+                waveLabel.setText("You win at wave " + currentWave + "!");
+                scoreLabel.setText("Final Score: " + monstersKilled);
                 stopGame();
                 return;
             }
 
-            if (activeMonsters.isEmpty() && monstersKilled < MAX_MONSTERS) {
-                spawnWave();
-            }
+            if (activeMonsters.isEmpty()) spawnWave();
 
         } catch (Exception e) {
             System.out.println("Error during game update: " + e.getMessage());
         }
     }
 
+
     public void updatePlayer(int direction) {
-        if (player != null) {
-            player.move(direction);
+        if (player != null) player.move(direction);
+    }
+
+    public void shootBullet(int mouseX, int mouseY) {
+        if (player == null) return;
+
+        long now      = System.currentTimeMillis();
+        int  cooldown = player.getCurrentCooldown();
+
+        if (now - lastShotTime >= cooldown) {
+            bullets.add(player.shoot(mouseX, mouseY));
+            soundManager.playClip("shoot", false);
+            lastShotTime = now;
         }
     }
 
-    public void shootBullet(int direction) {
+    public void setBulletType(BulletType type) {
         if (player != null) {
-            bullets.add(player.shoot(direction));
-            soundManager.playClip("shoot", false);
+            player.setBulletType(type);
+            bulletLabel.setText("Bullet: " + type.name());
         }
     }
+
 
     public void gameRender() {
         Graphics2D imageContext = (Graphics2D) image.getGraphics();
 
         imageContext.setColor(new Color(135, 206, 235));
         imageContext.fillRect(0, 0, getWidth(), getHeight());
-
         imageContext.setColor(new Color(155, 118, 83));
         imageContext.fillRect(0, 390, getWidth(), getHeight() - 390);
 
         if (treasure != null) treasure.draw(imageContext);
-        if (player != null) player.draw(imageContext);
+        if (player   != null) player.draw(imageContext);
 
-        for (Monster monster : activeMonsters) {
-            monster.draw(imageContext);
-        }
-
-        for (Bullet bullet : bullets) {
-            bullet.draw(imageContext);
-        }
+        for (Monster monster : activeMonsters) monster.draw(imageContext);
+        for (Bullet  bullet  : bullets)        bullet.draw(imageContext);
 
         Graphics2D g2 = (Graphics2D) getGraphics();
         if (g2 != null) {
@@ -178,10 +182,10 @@ public class GamePanel extends JPanel implements Runnable {
             paintChildren(g2);
             g2.dispose();
         }
-
         imageContext.dispose();
     }
 
+    @Override
     public void run() {
         try {
             isRunning = true;
@@ -195,31 +199,22 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void startGame() {
         if (!gameStarted) {
-            image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-            isRunning = true;
+            image       = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+            isRunning   = true;
             gameStarted = true;
             soundManager.playClip("background", true);
-            gameThread = new Thread(this);
+            gameThread  = new Thread(this);
             gameThread.start();
         }
     }
 
-    public boolean isGameStarted() {
-        return gameStarted;
-    }
-
     public void stopGame() {
         isRunning = false;
-        if (gameThread != null) {
-            soundManager.stopClip("background");
-        }
+        if (gameThread != null) soundManager.stopClip("background");
     }
 
-    public JLabel getScoreLabel() {
-        return scoreLabel;
-    }
-
-    public JLabel getWaveLabel() {
-        return waveLabel;
-    }
+    public boolean isGameStarted()  { return gameStarted; }
+    public JLabel  getScoreLabel()  { return scoreLabel;  }
+    public JLabel  getWaveLabel()   { return waveLabel;   }
+    public JLabel  getBulletLabel() { return bulletLabel; }
 }
