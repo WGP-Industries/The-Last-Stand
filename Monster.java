@@ -16,42 +16,77 @@ public abstract class Monster {
     protected Image monsterImageRight;
     protected Random random;
     protected int damage;
+    protected int maxHp;
+    protected boolean readyToRemove = false;
 
-    // Burn status 
-    private boolean burning              = false;
-    private int     burnDamagePerStep    = 0;
-    private int     burnStepsRemaining   = 0;
-    private int     burnStepCounter      = 0;
-    /** Apply burn damage every N ticks (4 × 50 ms = 200 ms between ticks). */
+    protected Animation walkLeftAnimation;
+    protected Animation walkRightAnimation;
+    protected Animation deathLeftAnimation;
+    protected Animation deathRightAnimation;
+
+
+    protected  final BurnFX burnFX = new BurnFX();
+    protected  final FreezeFX freezeFX = new FreezeFX();
+
+
+    protected boolean facingLeft = false;
+    protected boolean dying = false;
+
+    private boolean burning = false;
+    private int burnDamagePerStep = 0;
+    private int burnStepsRemaining = 0;
+    private int burnStepCounter = 0;
     private static final int BURN_TICK_INTERVAL = 4;
 
-    // Freeze status
-    private boolean frozen              = false;
-    private int     freezeTicksRemaining = 0;
-    private int     savedDx             = 0;
-
+    private boolean frozen = false;
+    private int freezeTicksRemaining = 0;
+    private int savedDx = 0;
 
     public Monster(JPanel p, int xPos, int yPos, Player ply, Treasure trs, int dmg) {
-        panel        = p;
-        x            = xPos;
-        y            = yPos;
-        damage       = dmg;
-        player       = ply;
-        treasure     = trs;
+        panel = p;
+        x = xPos;
+        y = yPos;
+        damage = dmg;
+        player = ply;
+        treasure = trs;
         soundManager = SoundManager.getInstance();
-        random       = new Random();
+        random = new Random();
     }
 
     public void move() {
         if (!panel.isVisible()) return;
 
         applyStatusEffects();
-        if (isDead()) return; // may have died from burn damage
+
+        if (isDead() && !dying) {
+            dying = true;
+            if (deathLeftAnimation != null) deathLeftAnimation.start();
+            if (deathRightAnimation != null) deathRightAnimation.start();
+            playDeathSound();
+        }
+
+        if (dying) {
+            Animation anim = getDeathAnimation();
+            if (anim != null) {
+                anim.update();
+                if (!anim.isStillActive()) {
+                    readyToRemove = true;
+                }
+            } else {
+                readyToRemove = true;
+            }
+            return;
+        }
 
         x += dx;
         y += dy;
 
+        if (dx != 0) facingLeft = dx < 0;
+
+        updateWalkAnimation();
+
         int panelWidth = panel.getWidth();
+        resolveMonsterCollision(((GamePanel) panel).getMonsters());
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             collideWithPlayer();
@@ -69,95 +104,159 @@ public abstract class Monster {
         }
     }
 
+    private void updateWalkAnimation() {
+        Animation anim = getWalkAnimation();
+        if (anim != null) anim.update();
+    }
+
+    protected Animation getWalkAnimation() {
+        return facingLeft ? walkLeftAnimation : walkRightAnimation;
+    }
+
+    protected Animation getDeathAnimation() {
+        return facingLeft ? deathLeftAnimation : deathRightAnimation;
+    }
+
+    public boolean isImmuneToFire() { return false; }
+
+
+    public boolean isReadyToRemove() {
+        return readyToRemove;
+    }
+
     protected void applyStatusEffects() {
-        // Burn
         if (burning && !isDead()) {
             burnStepCounter++;
             if (burnStepCounter >= BURN_TICK_INTERVAL) {
                 burnStepCounter = 0;
                 takeDamage(burnDamagePerStep);
                 burnStepsRemaining--;
-                if (burnStepsRemaining <= 0) {
-                    burning = false;
-                }
+                if (burnStepsRemaining <= 0) burning = false;
             }
         }
 
-        // Freeze: countdown
         if (frozen) {
             freezeTicksRemaining--;
             if (freezeTicksRemaining <= 0) {
                 frozen = false;
-                dx     = savedDx;
+                dx = savedDx;
             }
         }
     }
 
-    public void applyBurn(int dmgPerStep, int steps) {
-        burning            = true;
-        burnDamagePerStep  = dmgPerStep;
-        burnStepsRemaining = steps;
-        burnStepCounter    = 0;
-    }
-
-    public void applyFreeze(int ticks) {
-        if (!frozen) {
-            savedDx = dx; 
-        }
-        frozen               = true;
-        freezeTicksRemaining = ticks;
-        dx                   = 0;
-    }
-
-
-    public boolean isBurning() { return burning; }
-    public boolean isFrozen()  { return frozen;  }
-
-    public void push(int amount) {
-        int travelDir = frozen ? savedDx : dx;
-        if (travelDir < 0) {
-            x += amount;
-        } else if (travelDir > 0) {
-            x -= amount; 
-        }
-    }
-
- 
     public void draw(Graphics2D g2) {
+        if (dying) {
+            Animation deathAnim = getDeathAnimation();
+            if (deathAnim != null) {
+                g2.drawImage(deathAnim.getImage(), x, y, width, height, null);
+            } else {
+                drawStatic(g2);
+            }
+            return;
+        }
+
+        Animation walkAnim = getWalkAnimation();
+        if (walkAnim != null) {
+            g2.drawImage(walkAnim.getImage(), x, y, width, height, null);
+        } else {
+            drawStatic(g2);
+        }
+
+        drawStatusEffects(g2);
+        drawHealthBar(g2);
+    }
+
+    private void drawStatic(Graphics2D g2) {
         if (dx <= 0) {
             g2.drawImage(monsterImageRight, x + width, y, -width, height, null);
         } else {
             g2.drawImage(monsterImageLeft, x, y, width, height, null);
         }
-        drawStatusEffects(g2);
     }
 
-    protected void drawStatusEffects(Graphics2D g2) {
-        if (burning) {
-            g2.setColor(new Color(255, 100, 0, 90));
-            g2.fillRect(x, y, width, height);
-        }
-        if (frozen) {
-            g2.setColor(new Color(100, 200, 255, 100));
-            g2.fillRect(x, y, width, height);
-        }
+protected void drawStatusEffects(Graphics2D g2) {
+    if (!isBurning() && !isFrozen()) return;
+
+    java.awt.Image raw = getImage();
+    if (raw == null) return;
+
+    java.awt.image.BufferedImage frame = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+    java.awt.Graphics2D fg = frame.createGraphics();
+    fg.drawImage(raw, 0, 0, width, height, null);
+    fg.dispose();
+
+    if (isBurning()) burnFX.draw(g2, frame, x, y, width, height);
+    if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
+}
+
+    protected java.awt.Image getImage() {
+    return (dx < 0) ? monsterImageLeft : monsterImageRight;
+}
+
+    protected void drawHealthBar(Graphics2D g2) {
+        if (isDead()) return;
+        int barWidth = width;
+        int barHeight = 6;
+        int barX = x;
+        int barY = y - 10;
+
+        float pct = (maxHp > 0) ? Math.min(1f, Math.max(0f, (float) hp / maxHp)) : 0f;
+
+        g2.setColor(new Color(180, 30, 30));
+        g2.fillRect(barX, barY, barWidth, barHeight);
+
+        g2.setColor(new Color(40, 180, 40));
+        g2.fillRect(barX, barY, (int)(barWidth * pct), barHeight);
+
+        g2.setColor(new Color(0, 0, 0, 120));
+        g2.drawRect(barX, barY, barWidth, barHeight);
     }
 
+    public void applyBurn(int dmgPerStep, int steps) {
+        burning = true;
+        burnDamagePerStep = dmgPerStep;
+        burnStepsRemaining = steps;
+        burnStepCounter = 0;
+    }
+
+    public void applyFreeze(int ticks) {
+        if (!frozen) savedDx = dx;
+        frozen = true;
+        freezeTicksRemaining = ticks;
+        dx = 0;
+    }
+
+    public boolean isBurning() { return burning; }
+    public boolean isFrozen() { return frozen; }
+
+    public void push(int amount) {
+        int travelDir = frozen ? savedDx : dx;
+        if (travelDir < 0) x += amount;
+        else if (travelDir > 0) x -= amount;
+    }
+
+    public void respawnPublic() {
+        respawn();
+    }
+
+    public void heal(int amount) {
+        if (isDead()) return;
+        hp = Math.min(hp + amount, maxHp);
+    }
 
     public void takeDamage(int amount) {
         if (isDead()) return;
         hp -= amount;
-        if (isDead()) playDeathSound();
     }
 
     public void respawn() {
         int panelWidth = panel.getWidth();
-        // Restore speed if frozen so monster starts moving again after respawn
+        int travelDx = frozen ? savedDx : dx;
         if (frozen) {
             frozen = false;
-            dx     = savedDx;
+            dx = savedDx;
         }
-        x = (dx < 0) ? panelWidth + 50 : -50;
+        x = (travelDx < 0) ? panelWidth + 50 : -50;
         y = getY();
         soundManager.playClip("appear", false);
     }
@@ -171,12 +270,34 @@ public abstract class Monster {
         }
     }
 
+    public void resolveMonsterCollision(java.util.List<Monster> monsters) {
+        Rectangle2D.Double myBox = getBoundingRectangle();
+
+        for (Monster m : monsters) {
+            if (m == this || m.isDead()) continue;
+            if (!this.getClass().equals(m.getClass())) continue;
+
+            Rectangle2D.Double otherBox = m.getBoundingRectangle();
+
+            if (myBox.intersects(otherBox)) {
+                if (this.x < m.x) {
+                    this.x -= 20;
+                    m.x += 20;
+                } else {
+                    this.x += 20;
+                    m.x -= 20;
+                }
+                myBox = getBoundingRectangle();
+            }
+        }
+    }
+
     protected abstract void collideWithPlayer();
     protected abstract void playDeathSound();
 
-    public boolean isDead()                           { return hp <= 0; }
-    public int getHealth()                            { return hp; }
-    public Rectangle2D.Double getBoundingRectangle()  { return new Rectangle2D.Double(x, y, width, height); }
-    public int     getX()                              { return x; }
-    public int     getY()                              { return y; }
+    public boolean isDead() { return hp <= 0; }
+    public int getHealth() { return hp; }
+    public Rectangle2D.Double getBoundingRectangle() { return new Rectangle2D.Double(x, y, width, height); }
+    public int getX() { return x; }
+    public int getY() { return y; }
 }

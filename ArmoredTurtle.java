@@ -3,8 +3,7 @@ import javax.swing.JPanel;
 
 public class ArmoredTurtle extends Monster {
 
-    private Animation walkLeftAnimation;
-    private Animation walkRightAnimation;
+
 
     public ArmoredTurtle(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, 40);
@@ -15,7 +14,7 @@ public class ArmoredTurtle extends Monster {
         dx = (xPos < 0) ? 2 : -2;
         dy = 0;
         hp = 250;
-
+        maxHp = hp;
         walkLeftAnimation = new Animation(true);
         walkRightAnimation = new Animation(true);
 
@@ -42,6 +41,12 @@ public class ArmoredTurtle extends Monster {
     public void draw(Graphics2D g2) {
         java.awt.Image frame = getCurrentAnimation().getImage();
         g2.drawImage(frame, x, y, width, height, null);
+       
+       
+        
+    drawStatusEffects(g2);
+        drawHealthBar(g2);
+  
     }
 
     @Override
@@ -49,6 +54,11 @@ public class ArmoredTurtle extends Monster {
         hp -= damage / 2;
         if (isDead()) playDeathSound();
     }
+
+    @Override
+protected java.awt.Image getImage() {
+    return getCurrentAnimation().getImage();
+}
 
     @Override
     public void playDeathSound() {

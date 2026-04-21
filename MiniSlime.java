@@ -4,24 +4,21 @@ import javax.swing.JPanel;
 
 public class MiniSlime extends SplitSlime {
 
-    private final BurnFX   burnFX   = new BurnFX();
+    private final BurnFX burnFX = new BurnFX();
     private final FreezeFX freezeFX = new FreezeFX();
 
     public MiniSlime(JPanel p, int xPos, int yPos, Player player, Treasure treasure, int parentDx) {
         super(p, xPos, yPos, player, treasure);
 
-        width  = 40;
+        width = 40;
         height = 35;
-        hp     = 25;
-        dx     = parentDx;
+        hp = 25;
+        maxHp = hp;
+        dx = parentDx;
         facingLeft = (dx < 0);
-        phase  = Phase.WALKING;
+        phase = Phase.WALKING;
     }
 
-    /**
-     * Uses the mini slime's own width/height, not the parent class values.
-     * Only returns a real rect while WALKING ,dead/dying mini slimes don't block bullets.
-     */
     @Override
     public Rectangle2D.Double getBoundingRectangle() {
         if (phase == Phase.WALKING) {
@@ -31,20 +28,33 @@ public class MiniSlime extends SplitSlime {
     }
 
     @Override
+    public void takeDamage(int damage) {
+        if (phase != Phase.WALKING) return;
+        hp -= damage;
+        if (hp <= 0) {
+            hp = 0;
+            phase = Phase.DYING;
+            dying = true;
+            if (deathLeftAnimation != null) deathLeftAnimation.start();
+            if (deathRightAnimation != null) deathRightAnimation.start();
+            playDeathSound();
+        }
+    }
+
+    @Override
     public void move() {
         if (!panel.isVisible()) return;
 
         applyStatusEffects();
-        if (isDead()) return;
 
         switch (phase) {
             case WALKING:
                 x += dx;
                 if (dx != 0) facingLeft = (dx < 0);
-                if (!isFrozen()) getCurrentWalkAnimation().update();
+                if (!isFrozen()) getWalkAnimation().update();
 
                 if (treasure != null && !treasure.isDestroyed() &&
-                    getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
+                        getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
                     collideWithTreasure();
                     return;
                 }
@@ -58,8 +68,17 @@ public class MiniSlime extends SplitSlime {
                 break;
 
             case DYING:
-                deathAnimation.update();
-                if (!deathAnimation.isStillActive()) phase = Phase.DEAD;
+                Animation deathAnim = getDeathAnimation();
+                if (deathAnim != null) {
+                    deathAnim.update();
+                    if (!deathAnim.isStillActive()) {
+                        phase = Phase.DEAD;
+                        readyToRemove = true;
+                    }
+                } else {
+                    phase = Phase.DEAD;
+                    readyToRemove = true;
+                }
                 break;
 
             case DEAD:
@@ -67,18 +86,6 @@ public class MiniSlime extends SplitSlime {
 
             default:
                 break;
-        }
-    }
-
-    @Override
-    public void takeDamage(int damage) {
-        if (phase != Phase.WALKING) return;
-        hp -= damage;
-        if (hp <= 0) {
-            hp = 0;
-            phase = Phase.DYING;
-            deathAnimation.start();
-            playDeathSound();
         }
     }
 
@@ -86,30 +93,32 @@ public class MiniSlime extends SplitSlime {
     public void draw(Graphics2D g2) {
         switch (phase) {
             case WALKING:
-                g2.drawImage(getCurrentWalkAnimation().getImage(), x, y, width, height, null);
+                g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
                 drawStatusEffects(g2);
                 break;
             case DYING:
-                g2.drawImage(deathAnimation.getImage(), x, y, width, height, null);
+                g2.drawImage(getDeathAnimation().getImage(), x, y, width, height, null);
                 break;
             case DEAD:
                 break;
             default:
                 break;
         }
+
+        drawHealthBar(g2);
     }
 
     @Override
     protected void drawStatusEffects(Graphics2D g2) {
         if (phase != Phase.WALKING) return;
-        java.awt.Image raw = getCurrentWalkAnimation().getImage();
+        java.awt.Image raw = getWalkAnimation().getImage();
         if (raw == null) return;
         java.awt.image.BufferedImage frame = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
         java.awt.Graphics2D fg = frame.createGraphics();
         fg.drawImage(raw, 0, 0, width, height, null);
         fg.dispose();
         if (isBurning()) burnFX.draw(g2, frame, x, y, width, height);
-        if (isFrozen())  freezeFX.draw(g2, frame, x, y, width, height);
+        if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
     }
 
     @Override
@@ -117,10 +126,7 @@ public class MiniSlime extends SplitSlime {
         return phase == Phase.DEAD;
     }
 
-    @Override
-    public boolean hitMiniSlime(Bullet bullet) {
-        return false;
-    }
+
 
     @Override
     public void playDeathSound() {

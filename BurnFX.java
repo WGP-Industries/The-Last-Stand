@@ -3,6 +3,7 @@ public class BurnFX extends MonsterTintFX {
     public BurnFX() {
         super(80);
     }
+    
 
     @Override
     protected int applyTint(int pixel) {

@@ -1,27 +1,27 @@
-
 import javax.swing.JPanel;
 
-// Snake class represents a snake monster
 public class Snake extends Monster {
-    
+
     public Snake(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, 10);
+
         width = 140;
         height = 35;
         dx = (xPos < 0) ? 3 : -3;
         dy = 0;
-        hp = 100;
-        monsterImageRight = ImageManager.loadImage("images/snake.png");
-        monsterImageLeft = ImageManager.loadImage("images/snake.png");
 
+        hp = 100;
+        maxHp = hp;
+
+        monsterImageRight = ImageManager.loadImage("images/snake.png");
+        monsterImageLeft = monsterImageRight;
     }
 
-         
+
     @Override
     public void playDeathSound() {
         soundManager.playClip("die2", false);
     }
-
 
     @Override
     protected void collideWithPlayer() {
@@ -30,5 +30,4 @@ public class Snake extends Monster {
             respawn();
         }
     }
-
 }

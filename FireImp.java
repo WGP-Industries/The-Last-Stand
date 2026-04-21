@@ -1,12 +1,11 @@
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import javax.swing.JPanel;
 
 public class FireImp extends Monster {
 
-    private Animation walkLeftAnimation;
-    private Animation walkRightAnimation;
     private Image flyForwardLeftImage;
     private Image flyForwardRightImage;
     private Image flyBackwardLeftImage;
@@ -40,15 +39,14 @@ public class FireImp extends Monster {
         dx = (xPos < 0) ? 5 : -5;
         dy = 0;
         hp = 60;
+        maxHp = hp;
 
-        groundY      = yPos;
+        groundY       = yPos;
         paceDirection = (xPos < 0) ? 1 : -1;
-        shootTimer   = 0;
-        phaseTimer   = 0;
-        phase        = Phase.WALKING_TO_STOP;
-
-        // stopX calculated lazily in move() once panel is sized
-        stopX = -1;
+        shootTimer    = 0;
+        phaseTimer    = 0;
+        phase         = Phase.WALKING_TO_STOP;
+        stopX         = -1;
 
         fireballImage = ImageManager.loadImage("images/fire_imp/fireball.png");
         fireballs     = new ArrayList<>();
@@ -61,6 +59,13 @@ public class FireImp extends Monster {
         }
         walkLeftAnimation.start();
         walkRightAnimation.start();
+
+        deathLeftAnimation  = new Animation(false);
+        deathRightAnimation = new Animation(false);
+        for (int i = 1; i <= 11; i++) {
+            deathLeftAnimation.addFrame(ImageManager.loadImage("images/fire_imp/dead/fire_imp_left_dead_" + i + ".png"), 100);
+            deathRightAnimation.addFrame(ImageManager.loadImage("images/fire_imp/dead/fire_imp_right_dead_" + i + ".png"), 100);
+        }
 
         flyForwardLeftImage   = ImageManager.loadImage("images/fire_imp/fire_imp_left_walk_1.png");
         flyForwardRightImage  = ImageManager.loadImage("images/fire_imp/fire_imp_right_walk_1.png");
@@ -88,9 +93,58 @@ public class FireImp extends Monster {
         }
     }
 
+@Override
+protected void drawStatusEffects(Graphics2D g2) {
+    if (!isBurning() && !isFrozen()) return;
+
+    java.awt.Image raw;
+    if (phase == Phase.FLYING || phase == Phase.RISING || phase == Phase.DESCENDING) {
+        raw = getCurrentFlyImage();
+    } else {
+        raw = getCurrentWalkAnimation().getImage();
+    }
+
+    if (raw == null) return;
+
+ BufferedImage frame = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+    Graphics2D fg = frame.createGraphics();
+    fg.drawImage(raw, 0, 0, width, height, null);
+    fg.dispose();
+
+    if (isBurning()) burnFX.draw(g2, frame, x, y, width, height);
+    if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
+}
+
+    @Override
+    public void takeDamage(int amount) {
+        if (dying) return;
+        hp -= amount;
+        if (hp <= 0) {
+            hp = 0;
+            dying = true;
+            facingLeft = (dx <= 0);
+            deathLeftAnimation.start();
+            deathRightAnimation.start();
+            playDeathSound();
+        }
+    }
+
     @Override
     public void move() {
         if (!panel.isVisible()) return;
+
+        applyStatusEffects();
+
+        if (dying) {
+            Animation anim = getDeathAnimation();
+            if (anim != null) {
+                anim.update();
+                if (!anim.isStillActive()) readyToRemove = true;
+            } else {
+                readyToRemove = true;
+            }
+            return;
+        }
 
         initStopX();
 
@@ -129,7 +183,6 @@ public class FireImp extends Monster {
             case RISING:
                 x += dx;
                 y += dy;
-
                 getCurrentWalkAnimation().update();
 
                 if (x <= stopX - PACE_RANGE) { dx = PACE_SPEED;  paceDirection =  1; }
@@ -224,17 +277,30 @@ public class FireImp extends Monster {
 
     @Override
     public void draw(Graphics2D g2) {
+        if (dying) {
+            Animation anim = getDeathAnimation();
+            if (anim != null) g2.drawImage(anim.getImage(), x, y, width, height, null);
+            return;
+        }
+
         if (phase == Phase.FLYING || phase == Phase.RISING || phase == Phase.DESCENDING) {
             g2.drawImage(getCurrentFlyImage(), x, y, width, height, null);
         } else {
             g2.drawImage(getCurrentWalkAnimation().getImage(), x, y, width, height, null);
         }
+        
 
+    drawStatusEffects(g2);
         for (Fireball fb : fireballs) {
             fb.draw(g2);
         }
+
+        drawHealthBar(g2);
     }
 
+
+
+    @Override
     public boolean isImmuneToFire() { return true; }
 
     @Override

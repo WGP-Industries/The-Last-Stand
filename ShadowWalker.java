@@ -1,15 +1,10 @@
 import java.awt.Graphics2D;
+import java.awt.Image;
 import javax.swing.JPanel;
 
 public class ShadowWalker extends Monster {
 
-    private Animation walkLeftAnimation;
-    private Animation walkRightAnimation;
     private DisappearFX disappearFX;
-    private int visibilityTimer;
-    private boolean isInvisible;
-    private static final int INVISIBLE_DURATION = 1060;
-    private static final int VISIBLE_DURATION = 40;
 
     public ShadowWalker(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, 30);
@@ -20,9 +15,7 @@ public class ShadowWalker extends Monster {
         dx = (xPos < 0) ? 4 : -4;
         dy = 0;
         hp = 75;
-
-        isInvisible = false;
-        visibilityTimer = VISIBLE_DURATION;
+        maxHp = hp;
 
         walkLeftAnimation = new Animation(true);
         walkLeftAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_left_1.png"), 100);
@@ -36,58 +29,58 @@ public class ShadowWalker extends Monster {
         walkRightAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_right_3.png"), 100);
         walkRightAnimation.start();
 
-        disappearFX = new DisappearFX((GamePanel) p, xPos, yPos, width, height, getCurrentAnimation());
+        // Start with alpha = 0 so it's fully invisible from the beginning
+        disappearFX = new DisappearFX(xPos, yPos, width, height, getCurrentAnimation());
+        
     }
 
     private Animation getCurrentAnimation() {
         return (dx <= 0) ? walkLeftAnimation : walkRightAnimation;
     }
 
-    @Override
-    public void move() {
-        visibilityTimer--;
-        
-        if (visibilityTimer <= 0) {
-            isInvisible = !isInvisible;
-            visibilityTimer = isInvisible ? INVISIBLE_DURATION : VISIBLE_DURATION;
-            if (!isInvisible) disappearFX.reset();
-        }
-
-        if (isInvisible) {
+        @Override
+        public void move() {
             disappearFX.setPosition(x, y);
             disappearFX.setAnimation(getCurrentAnimation());
-            disappearFX.update();
+            disappearFX.update(); // drives the fade back to invisible every frame
+
+            getCurrentAnimation().update();
+            super.move();
         }
 
-        getCurrentAnimation().update();
-        super.move();
-    }
 
     @Override
     public void draw(Graphics2D g2) {
-        java.awt.Image frame = getCurrentAnimation().getImage();
-        if (isInvisible) {
-            disappearFX.draw(g2);
-        } else {
-            g2.drawImage(frame, x, y, width, height, null);
+        // Always render through disappearFX (handles full invisibility and fade states)
+        disappearFX.draw(g2);
+        if (disappearFX.getAlpha() > 0) {
+
+            drawHealthBar(g2);
+        }
+        
+    drawStatusEffects(g2);
+    }
+
+    @Override
+    public void collideWithTreasure() {
+        if (treasure != null && !treasure.isDestroyed() &&
+                getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
+            treasure.takeDamage(damage);
+            soundManager.playClip("hit", false);
+            disappearFX.reset(); // alpha back to 255, update() handles fading automatically
+            respawn();
         }
     }
 
-    public boolean isInvisible() {
-        return isInvisible;
-    }
-
-    public void reveal() {
-        isInvisible = false;
-        visibilityTimer = VISIBLE_DURATION;
-    }
+    @Override
+protected Image getImage() {
+    return getCurrentAnimation().getImage();
+}
 
     @Override
     public void playDeathSound() {
         soundManager.playClip("die", false);
     }
-
-
 
     @Override
     protected void collideWithPlayer() {

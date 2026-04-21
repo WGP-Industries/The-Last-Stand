@@ -76,6 +76,12 @@ public class Player {
         }
     }
 
+        public void push(int amount) {
+        x += (x < panel.getWidth() / 2) ? -amount : amount;
+        x = Math.max(0, Math.min(x, panel.getWidth() - width));
+    }
+ 
+
 public Bullet shoot(int mouseX, int mouseY) {
 
     boolean shootingLeft = mouseX < x + width / 2;

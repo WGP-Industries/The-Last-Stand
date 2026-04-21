@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -7,19 +8,18 @@ import java.util.Random;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-
 public class GamePanel extends JPanel implements Runnable {
 
-    private static int MAX_MONSTERS = 1; // max kills to win
+    private static int MAX_MONSTERS = 1;
 
     private SoundManager soundManager;
     private Player player;
     private Treasure treasure;
     private ArrayList<Bullet> bullets;
     private ArrayList<Monster> activeMonsters;
-    private int monstersKilled; // total kills
-    private boolean gameStarted; // game state
-    private boolean isRunning; // loop state
+    private int monstersKilled;
+    private boolean gameStarted;
+    private boolean isRunning;
 
     private Thread gameThread;
     private BufferedImage image;
@@ -27,17 +27,17 @@ public class GamePanel extends JPanel implements Runnable {
     private JLabel scoreLabel;
     private JLabel waveLabel;
     private JLabel bulletLabel;
-    private int currentWave; // wave count
+    private int currentWave;
     private Random random;
 
-    private long lastShotTime = 0; // fire cooldown
+    private long lastShotTime = 0;
 
     public GamePanel() {
         scoreLabel  = new JLabel("Score: 0");
         waveLabel   = new JLabel("Wave: 0");
         bulletLabel = new JLabel("Bullet: BASIC  [1-9 to switch]");
 
-        currentWave    = 0;
+        currentWave = 0;
         monstersKilled = 0;
 
         player = null;
@@ -51,81 +51,141 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void createGameEntities() {
-        player = new Player(this, getWidth() / 2, 350); // spawn player
-        treasure = new Treasure(getWidth() / 2, 330); // spawn base
+        player = new Player(this, getWidth() / 2, 350);
+        treasure = new Treasure(getWidth() / 2, 330);
 
         activeMonsters = new ArrayList<>();
         bullets = new ArrayList<>();
     }
 
     private void spawnWave() {
-        if (monstersKilled >= MAX_MONSTERS) return; // stop if done
+        if (monstersKilled >= MAX_MONSTERS) return;
 
         currentWave++;
         waveLabel.setText("Wave: " + currentWave);
 
         int remaining = MAX_MONSTERS - monstersKilled;
-        int waveSize = Math.min(random.nextInt(4) + 1, remaining); // random count
+        int waveSize = Math.min(random.nextInt(4) + 1, remaining);
 
         for (int i = 0; i < waveSize; i++) {
-            int spawnSide = random.nextInt(2); // left or right
-            int xPos = (spawnSide == 0) ? -50 : getWidth() + 50; // off screen
 
-            int monsterType = 4; // temp fixed type
+            int spawnSide = random.nextInt(2);
+            int baseX = (spawnSide == 0) ? -50 : getWidth() + 50;
+
+            int xPos = (spawnSide == 0)
+                    ? baseX - random.nextInt(200)
+                    : baseX + random.nextInt(200);
+
+            int monsterType = 6;
+
+            Monster newMonster;
 
             if (monsterType == 0) {
-                activeMonsters.add(new Snake(this, xPos, 350, player, treasure));
+                newMonster = new Snake(this, xPos, 350, player, treasure);
             } else if (monsterType == 1) {
-                activeMonsters.add(new Ghost(this, xPos, 350, player, treasure));
+                newMonster = new Ghost(this, xPos, 350, player, treasure);
             } else if (monsterType == 2) {
-                activeMonsters.add(new ArmoredTurtle(this, xPos, 350, player, treasure));
+                newMonster = new ArmoredTurtle(this, xPos, 350, player, treasure);
             } else if (monsterType == 3) {
-                activeMonsters.add(new FireImp(this, xPos, 350, player, treasure));
+                newMonster = new FireImp(this, xPos, 350, player, treasure);
             } else if (monsterType == 4) {
-                activeMonsters.add(new SplitSlime(this, xPos, 330, player, treasure));
+                newMonster = new SplitSlime(this, xPos, 330, player, treasure);
+            } else if (monsterType == 5) {
+                newMonster = new Healer(this, xPos, 350, player, treasure);
             } else {
-                activeMonsters.add(new ShadowWalker(this, xPos, 350, player, treasure));
+                newMonster = new ShadowWalker(this, xPos, 350, player, treasure);
             }
+
+            boolean collision;
+            int safety = 0;
+
+            do {
+                collision = false;
+
+                Rectangle2D.Double newRect = newMonster.getBoundingRectangle();
+
+                for (Monster m : activeMonsters) {
+                    if (newRect.intersects(m.getBoundingRectangle())) {
+
+                        if (spawnSide == 0) newMonster.x -= 50;
+                        else newMonster.x += 50;
+
+                        collision = true;
+                        newRect = newMonster.getBoundingRectangle();
+                    }
+                }
+
+                safety++;
+
+            } while (collision && safety < 10);
+
+            activeMonsters.add(newMonster);
         }
+    }
+
+    public ArrayList<Monster> getMonsters() {
+        return activeMonsters;
     }
 
     public void gameUpdate() {
 
         if (treasure != null && treasure.isDestroyed()) {
-            isRunning = false; // stop loop
-            waveLabel.setText("Game over at wave: " + currentWave + "! ");
-            scoreLabel.setText(" Final Score: " + monstersKilled);
+            isRunning = false;
+            waveLabel.setText("Game over at wave: " + currentWave + "!");
+            scoreLabel.setText("Final Score: " + monstersKilled);
             stopGame();
             return;
         }
 
         try {
-            for (Monster monster : activeMonsters) monster.move(); // move enemies
+
+            for (Monster monster : activeMonsters) {
+                if (monster instanceof Healer healer) {
+                    healer.move(activeMonsters);
+                } else {
+                    monster.move();
+                }
+            }
 
             Iterator<Bullet> bulletIter = bullets.iterator();
             while (bulletIter.hasNext()) {
                 Bullet bullet = bulletIter.next();
-                bullet.move(); // move bullet
+                bullet.move();
 
                 if (!bullet.isActive()) {
-                    bulletIter.remove(); // remove dead bullet
+                    bulletIter.remove();
                     continue;
                 }
 
                 boolean consumed = false;
 
-                for (Monster monster : activeMonsters) {
-                    if (monster.isDead()) continue;
+for (Monster monster : activeMonsters) {
 
-                    if (bullet.getBoundingRectangle().intersects(monster.getBoundingRectangle())) {
-                        bullet.onHit(monster, activeMonsters); // apply damage
+    if (monster instanceof SplitSlime slime) {
+        if (slime.hitMiniSlime(bullet)) {
+            if (!bullet.isPiercing()) {
+                consumed = true;
+                break;
+            }
+        }
+    }
 
-                        if (!bullet.isPiercing()) {
-                            consumed = true; // remove if not piercing
-                            break;
-                        }
-                    }
-                }
+    if (monster.isDead()) continue;
+
+    if (bullet.getBoundingRectangle().intersects(monster.getBoundingRectangle())) {
+        bullet.onHit(monster, activeMonsters);
+
+        if (!bullet.isPiercing()) {
+            consumed = true;
+            break;
+        }
+    }
+}
+
+
+
+
+
 
                 if (consumed) bulletIter.remove();
             }
@@ -134,7 +194,7 @@ public class GamePanel extends JPanel implements Runnable {
 
             for (Monster m : activeMonsters) {
                 if (m instanceof SplitSlime && !(m instanceof MiniSlime)) {
-                    toAdd.addAll(((SplitSlime) m).drainPendingMinis()); // spawn minis
+                    toAdd.addAll(((SplitSlime) m).drainPendingMinis());
                 }
             }
 
@@ -144,10 +204,19 @@ public class GamePanel extends JPanel implements Runnable {
             while (monsterIter.hasNext()) {
                 Monster m = monsterIter.next();
 
-                if (!m.isDead()) continue;
+                if (!m.isReadyToRemove()) continue;
 
-                if (!(m instanceof MiniSlime)) monstersKilled++; // count kill
-                monsterIter.remove(); // remove dead
+                if (m instanceof SplitSlime slime) {
+                    if (slime.isFullyDead()) {
+                        monstersKilled++;
+                        monsterIter.remove();
+                    }
+                } else if (!(m instanceof MiniSlime)) {
+                    monstersKilled++;
+                    monsterIter.remove();
+                } else {
+                    monsterIter.remove();
+                }
             }
 
             scoreLabel.setText("Score: " + monstersKilled);
@@ -159,7 +228,7 @@ public class GamePanel extends JPanel implements Runnable {
                 return;
             }
 
-            if (activeMonsters.isEmpty()) spawnWave(); // next wave
+            if (activeMonsters.isEmpty()) spawnWave();
 
         } catch (Exception e) {
             System.out.println("Error during game update: " + e.getMessage());
@@ -167,25 +236,25 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void updatePlayer(int direction) {
-        if (player != null && gameStarted) player.move(direction); // move player
+        if (player != null && gameStarted) player.move(direction);
     }
 
     public void shootBullet(int mouseX, int mouseY) {
-        if (player == null || !gameStarted) return; // ignore if not ready
+        if (player == null || !gameStarted) return;
 
         long now = System.currentTimeMillis();
-        int cooldown = player.getCurrentCooldown(); // get fire rate
+        int cooldown = player.getCurrentCooldown();
 
         if (now - lastShotTime >= cooldown) {
-            bullets.add(player.shoot(mouseX, mouseY)); // shoot
+            bullets.add(player.shoot(mouseX, mouseY));
             soundManager.playClip("shoot", false);
-            lastShotTime = now; // reset timer
+            lastShotTime = now;
         }
     }
 
     public void setBulletType(BulletType type) {
         if (player != null) {
-            player.setBulletType(type); // change type
+            player.setBulletType(type);
             bulletLabel.setText("Bullet: " + type.name());
         }
     }
@@ -193,22 +262,22 @@ public class GamePanel extends JPanel implements Runnable {
     public void gameRender() {
         Graphics2D imageContext = (Graphics2D) image.getGraphics();
 
-        imageContext.setColor(new Color(135, 206, 235)); // sky
+        imageContext.setColor(new Color(135, 206, 235));
         imageContext.fillRect(0, 0, getWidth(), getHeight());
 
-        imageContext.setColor(new Color(155, 118, 83)); // ground
+        imageContext.setColor(new Color(155, 118, 83));
         imageContext.fillRect(0, 390, getWidth(), getHeight() - 390);
 
         if (treasure != null) treasure.draw(imageContext);
-        if (player   != null) player.draw(imageContext);
+        if (player != null) player.draw(imageContext);
 
         for (Monster monster : activeMonsters) monster.draw(imageContext);
-        for (Bullet  bullet  : bullets)        bullet.draw(imageContext);
+        for (Bullet bullet : bullets) bullet.draw(imageContext);
 
         Graphics2D g2 = (Graphics2D) getGraphics();
         if (g2 != null) {
             g2.drawImage(image, 0, 0, getWidth(), getHeight(), null);
-            paintChildren(g2); // draw ui
+            paintChildren(g2);
             g2.dispose();
         }
 
@@ -219,25 +288,20 @@ public class GamePanel extends JPanel implements Runnable {
     public void run() {
         try {
             isRunning = true;
-
             while (isRunning) {
-                gameUpdate(); // update logic
-                gameRender(); // draw frame
-                Thread.sleep(50); // control speed
+                gameUpdate();
+                gameRender();
+                Thread.sleep(50);
             }
-
         } catch (InterruptedException e) {}
     }
 
     public void startGame() {
         if (!gameStarted) {
             image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-
             isRunning = true;
             gameStarted = true;
-
-            soundManager.playClip("background", true); // start music
-
+            soundManager.playClip("background", true);
             gameThread = new Thread(this);
             gameThread.start();
         }
@@ -245,12 +309,12 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void stopGame() {
         isRunning = false;
-        if (gameThread != null) soundManager.stopClip("background"); // stop music
+        gameStarted = false;
+        if (gameThread != null) soundManager.stopClip("background");
     }
 
-    public boolean isGameStarted()  { return gameStarted; }
-    public JLabel  getScoreLabel()  { return scoreLabel;  }
-    public JLabel  getWaveLabel()   { return waveLabel;   }
-    public JLabel  getBulletLabel() { return bulletLabel; }
+    public boolean isGameStarted() { return gameStarted; }
+    public JLabel getScoreLabel() { return scoreLabel; }
+    public JLabel getWaveLabel() { return waveLabel; }
+    public JLabel getBulletLabel() { return bulletLabel; }
 }
-

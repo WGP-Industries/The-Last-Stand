@@ -12,10 +12,19 @@ public class FreezeBullet extends AnimatedBullet {
     @Override public double getSpeed()    { return 11; }
     @Override public int    getCooldown() { return 400; }
 
+
+
+
+
+
+
+
+
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
         int actualDamage = (target instanceof SplitSlime) ? damage * 2 : damage;
-        target.takeDamage(actualDamage);
         target.applyFreeze(FREEZE_TICKS);
+        if (target.isFrozen()) actualDamage = (int)(actualDamage * 1.5);
+        target.takeDamage(actualDamage);
     }
 }

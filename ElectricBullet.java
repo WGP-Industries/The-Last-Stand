@@ -9,7 +9,7 @@ public class ElectricBullet extends AnimatedBullet {
     private static final int MAX_CHAINS  = 2;
 
     public ElectricBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "Thunder_projectile.png", 5, 80);
+        super(panel, xPos, yPos, "images/bullets/Thunder_projectile.png", 5, 80);
         damage = 20;
     }
 

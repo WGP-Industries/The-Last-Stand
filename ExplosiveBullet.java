@@ -12,7 +12,7 @@ public class ExplosiveBullet extends AnimatedBullet {
     private int     explodeTick = 0;
 
     public ExplosiveBullet(JPanel panel, int xPos, int yPos) {
-        super(panel, xPos, yPos, "fire_bullet.png", 4, 80);
+        super(panel, xPos, yPos, "images/bullets/fire_bullet.png", 4, 80);
         damage = 50;
     }
 

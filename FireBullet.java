@@ -13,10 +13,11 @@ public class FireBullet extends AnimatedBullet {
     @Override public double getSpeed()    { return 9; }
     @Override public int    getCooldown() { return 350; }
 
-    @Override
-    public void onHit(Monster target, ArrayList<Monster> allMonsters) {
-        int actualDamage = (target instanceof SplitSlime) ? damage * 2 : damage;
-        target.takeDamage(actualDamage);
-        target.applyBurn(BURN_DMG_PER_STEP, BURN_STEPS);
-    }
+   @Override
+public void onHit(Monster target, ArrayList<Monster> allMonsters) {
+    if (target.isImmuneToFire()) return;
+    int actualDamage = (target instanceof SplitSlime) ? damage * 2 : damage;
+    target.takeDamage(actualDamage);
+    target.applyBurn(BURN_DMG_PER_STEP, BURN_STEPS);
+}
 }

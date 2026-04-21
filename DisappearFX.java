@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 
 public class DisappearFX implements ImageFX {
 
-	private GamePanel panel;
 
 	private int x;
 	private int y;
@@ -17,9 +16,8 @@ public class DisappearFX implements ImageFX {
 	int alpha, alphaChange;
 
 
-	public DisappearFX (GamePanel p, int xPos, int yPos, int w, int h, Animation anim) {
-		panel = p;
-
+	public DisappearFX (int xPos, int yPos, int w, int h, Animation anim) {
+	
 		x = xPos;
 		y = yPos;
 		width = w;
@@ -28,7 +26,7 @@ public class DisappearFX implements ImageFX {
 		animation = anim;
 
 		time = 0;
-		timeChange = 1;
+		timeChange = 200;
 
 		alpha = 255;
 		alphaChange = 10;
@@ -72,19 +70,29 @@ public class DisappearFX implements ImageFX {
 	public Rectangle2D.Double getBoundingRectangle() {
 		return new Rectangle2D.Double(x, y, width, height);
 	}
+public void setFullyInvisible() {
+    alpha = 0;
+}
+
+
 
 
     public void setAnimation(Animation anim) {
     animation = anim;
 }
 
+
+public int getAlpha() {
+	return alpha;
+}
+
 public void reset() {
     alpha = 255;
 }
 
-    public void update() {
-        if (alpha > 20) {
-            alpha -= alphaChange;
-        }
+public void update() {
+    if (alpha > 0) {
+        alpha = Math.max(0, alpha - alphaChange);
     }
+}
 }

@@ -13,7 +13,7 @@ public class Ghost extends Monster {
             
             dy = 0;
             hp = 50;
-            
+            maxHp = hp;
             monsterImageLeft = ImageManager.loadImage("images/ghost.png");
             monsterImageRight = ImageManager.loadImage("images/ghost.png");
         }
