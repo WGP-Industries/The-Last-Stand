@@ -97,7 +97,7 @@ public class FireImp extends Monster {
 protected void drawStatusEffects(Graphics2D g2) {
     if (!isBurning() && !isFrozen()) return;
 
-    java.awt.Image raw;
+    Image raw;
     if (phase == Phase.FLYING || phase == Phase.RISING || phase == Phase.DESCENDING) {
         raw = getCurrentFlyImage();
     } else {
@@ -106,7 +106,7 @@ protected void drawStatusEffects(Graphics2D g2) {
 
     if (raw == null) return;
 
- BufferedImage frame = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+ BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     Graphics2D fg = frame.createGraphics();
     fg.drawImage(raw, 0, 0, width, height, null);
     fg.dispose();

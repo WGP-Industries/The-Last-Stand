@@ -1,4 +1,5 @@
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
@@ -40,7 +41,7 @@ public class DisappearFX implements ImageFX {
 
 
 	public void draw(Graphics2D g2) {
-		java.awt.Image frame = animation.getImage();
+		Image frame = animation.getImage();
 
 		BufferedImage copy = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D copyG2 = copy.createGraphics();

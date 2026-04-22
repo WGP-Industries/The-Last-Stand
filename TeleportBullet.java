@@ -14,4 +14,7 @@ public class TeleportBullet extends AnimatedBullet {
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
         target.respawn();
     }
+
+    @Override
+    public boolean bypassesShield() { return true; }
 }

@@ -2,8 +2,11 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.Random;
 import javax.swing.JPanel;
+
 
 public abstract class Monster {
 
@@ -177,11 +180,11 @@ public abstract class Monster {
 protected void drawStatusEffects(Graphics2D g2) {
     if (!isBurning() && !isFrozen()) return;
 
-    java.awt.Image raw = getImage();
+    Image raw = getImage();
     if (raw == null) return;
 
-    java.awt.image.BufferedImage frame = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-    java.awt.Graphics2D fg = frame.createGraphics();
+    BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D fg = frame.createGraphics();
     fg.drawImage(raw, 0, 0, width, height, null);
     fg.dispose();
 
@@ -189,7 +192,7 @@ protected void drawStatusEffects(Graphics2D g2) {
     if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
 }
 
-    protected java.awt.Image getImage() {
+    protected Image getImage() {
     return (dx < 0) ? monsterImageLeft : monsterImageRight;
 }
 
@@ -270,7 +273,7 @@ protected void drawStatusEffects(Graphics2D g2) {
         }
     }
 
-    public void resolveMonsterCollision(java.util.List<Monster> monsters) {
+    public void resolveMonsterCollision(List<Monster> monsters) {
         Rectangle2D.Double myBox = getBoundingRectangle();
 
         for (Monster m : monsters) {

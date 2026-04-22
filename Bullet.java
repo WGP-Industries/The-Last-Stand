@@ -38,6 +38,9 @@ public abstract class Bullet {
         }
     }
 
+
+    public boolean bypassesShield() { return false; }
+
     // Piercing and Explosive bullets override this to true.
     public boolean isPiercing() { return false; }
 

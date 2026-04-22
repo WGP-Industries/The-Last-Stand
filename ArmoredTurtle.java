@@ -1,4 +1,5 @@
 import java.awt.Graphics2D;
+import java.awt.Image;
 import javax.swing.JPanel;
 
 public class ArmoredTurtle extends Monster {
@@ -39,7 +40,7 @@ public class ArmoredTurtle extends Monster {
 
     @Override
     public void draw(Graphics2D g2) {
-        java.awt.Image frame = getCurrentAnimation().getImage();
+        Image frame = getCurrentAnimation().getImage();
         g2.drawImage(frame, x, y, width, height, null);
        
        
@@ -56,7 +57,7 @@ public class ArmoredTurtle extends Monster {
     }
 
     @Override
-protected java.awt.Image getImage() {
+protected Image getImage() {
     return getCurrentAnimation().getImage();
 }
 

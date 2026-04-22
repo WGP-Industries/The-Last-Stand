@@ -51,7 +51,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void createGameEntities() {
-        player = new Player(this, getWidth() / 2, 350);
+        player = new Player(this, getWidth() / 2, 250);
         treasure = new Treasure(getWidth() / 2, 330);
 
         activeMonsters = new ArrayList<>();
@@ -76,7 +76,7 @@ public class GamePanel extends JPanel implements Runnable {
                     ? baseX - random.nextInt(200)
                     : baseX + random.nextInt(200);
 
-            int monsterType = 6;
+            int monsterType = 7;
 
             Monster newMonster;
 
@@ -92,7 +92,13 @@ public class GamePanel extends JPanel implements Runnable {
                 newMonster = new SplitSlime(this, xPos, 330, player, treasure);
             } else if (monsterType == 5) {
                 newMonster = new Healer(this, xPos, 350, player, treasure);
-            } else {
+            } else if (monsterType == 6) {
+                newMonster = new ShieldGuardian(this, xPos, 330, player, treasure);
+             } else if (monsterType == 7 ){
+                  newMonster = new BerserkerOrc(this, xPos, 350, player, treasure);
+             }
+            
+            else {
                 newMonster = new ShadowWalker(this, xPos, 350, player, treasure);
             }
 
@@ -169,6 +175,13 @@ for (Monster monster : activeMonsters) {
             }
         }
     }
+
+    if (monster instanceof ShieldGuardian sg) {
+    if (sg.getShield().blocks(bullet)) {
+            consumed = true;
+            break;
+    }
+}
 
     if (monster.isDead()) continue;
 
