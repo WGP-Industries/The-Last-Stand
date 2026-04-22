@@ -11,6 +11,9 @@ import javax.swing.JPanel;
 public abstract class Monster {
 
     protected JPanel panel;
+
+    public List<Monster> sharedMonsterList;
+
     protected int x, y, width, height, dx, dy, hp;
     protected Player player;
     protected Treasure treasure;
@@ -89,7 +92,7 @@ public abstract class Monster {
         updateWalkAnimation();
 
         int panelWidth = panel.getWidth();
-        resolveMonsterCollision(((GamePanel) panel).getMonsters());
+        if (sharedMonsterList != null) resolveMonsterCollision(sharedMonsterList);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             collideWithPlayer();

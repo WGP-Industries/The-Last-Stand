@@ -102,7 +102,7 @@ public class BerserkerOrc extends Monster {
         facingLeft = (dx < 0);
         getWalkAnimation().update();
 
-        resolveMonsterCollision(((GamePanel) panel).getMonsters());
+        if (sharedMonsterList != null) resolveMonsterCollision(sharedMonsterList);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             collideWithPlayer();
