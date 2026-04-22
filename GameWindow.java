@@ -341,6 +341,9 @@ public class GameWindow extends JFrame
         if (player   != null) player.draw(g);
         for (Monster m : activeMonsters) m.draw(g);
         for (Bullet  b : bullets)        b.draw(g);
+
+        for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
+        for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
     }
 
     private void drawHUD(Graphics2D g) {
