@@ -1,4 +1,3 @@
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public abstract class MonsterTintFX {
@@ -21,19 +20,14 @@ public abstract class MonsterTintFX {
         return truncate(value);
     }
 
-    public void draw(Graphics2D g2, BufferedImage source, int x, int y, int width, int height) {
-        BufferedImage copy = ImageManager.copyImage(source);
+    public BufferedImage applyToFrame(BufferedImage source) {
+    BufferedImage copy = ImageManager.copyImage(source);
+    int w = copy.getWidth(), h = copy.getHeight();
+    int[] pixels = new int[w * h];
+    copy.getRGB(0, 0, w, h, pixels, 0, w);
+    for (int i = 0; i < pixels.length; i++) pixels[i] = applyTint(pixels[i]);
+    copy.setRGB(0, 0, w, h, pixels, 0, w);
+    return copy;
+}
 
-        int w = copy.getWidth();
-        int h = copy.getHeight();
-        int[] pixels = new int[w * h];
-        copy.getRGB(0, 0, w, h, pixels, 0, w);
-
-        for (int i = 0; i < pixels.length; i++) {
-            pixels[i] = applyTint(pixels[i]);
-        }
-
-        copy.setRGB(0, 0, w, h, pixels, 0, w);
-        g2.drawImage(copy, x, y, width, height, null);
-    }
 }

@@ -23,8 +23,31 @@ public class Ghost extends Monster {
             soundManager.playClip("die", false);
         }
 
+         @Override
+        public boolean isImmuneToFreeze() {
+            return true;
+        }
+
+        @Override
+        public boolean isImmuneToElectricity() {
+            return true;
+        }
+        @Override
+        public boolean isImmuneToFire() {
+            return true;
+        }
+
+        @Override
+        public  boolean isResistantToSprit() {
+            return false;
+        }
 
 
+
+        
+
+
+   
         @Override
         protected void collideWithPlayer() {}
 

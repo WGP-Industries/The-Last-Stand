@@ -1,5 +1,3 @@
-import java.awt.Graphics2D;
-import java.awt.Image;
 import javax.swing.JPanel;
 
 public class BerserkerOrc extends Monster {
@@ -7,8 +5,7 @@ public class BerserkerOrc extends Monster {
     private static final int BASE_SPEED  = 3;
     private static final int BASE_DAMAGE = 30;
    
-    private static final float RAGE_THRESHOLD     = 0.4f;
-    private static final float FIRE_RAGE_THRESHOLD = 0.6f;
+
     private static final int RAGE_SPEED  = 7;
     private static final int RAGE_DAMAGE = 60;
 
@@ -99,10 +96,11 @@ public class BerserkerOrc extends Monster {
         }
 
         x += dx;
-        facingLeft = (dx < 0);
+        if (dx != 0) facingLeft = (dx < 0);
+
         getWalkAnimation().update();
 
-        if (sharedMonsterList != null) resolveMonsterCollision(sharedMonsterList);
+        if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             collideWithPlayer();
@@ -118,23 +116,8 @@ public class BerserkerOrc extends Monster {
         if (x < -100 || x > panel.getWidth() + 100) respawn();
     }
 
-    @Override
-    public void draw(Graphics2D g2) {
-        if (dying) {
-            Animation anim = getDeathAnimation();
-            if (anim != null) g2.drawImage(anim.getImage(), x, y, width, height, null);
-            return;
-        }
 
-        g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
-        drawStatusEffects(g2);
-        drawHealthBar(g2);
-    }
 
-    @Override
-    protected Image getImage() {
-        return getWalkAnimation().getImage();
-    }
 
     @Override
     public void respawn() {

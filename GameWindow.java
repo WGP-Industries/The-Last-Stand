@@ -1,20 +1,24 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.*;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import javax.swing.*;
+
 
 public class GameWindow extends JFrame
         implements Runnable, KeyListener, MouseListener, MouseMotionListener {
 
 
-    private enum GameState { MENU, PLAYING, PAUSED, GAME_OVER, WIN }
+    private enum GameState { MENU, PLAYING, PAUSED, GAME_OVER, WIN,LEVEL_COMPLETE  }
     private volatile GameState state = GameState.MENU;
 
     private static final int W = 800;
-    private static final int H = 520;
+    private static final int H = 600;
 
     private JPanel gameArea;
 
@@ -37,12 +41,18 @@ public class GameWindow extends JFrame
     private int monstersKilled;
     private int currentWave;
     private long lastShotTime;
+    private int completedLevel = 0;
     private boolean gameStarted;
 
     private JLabel scoreLabel = new JLabel("Score: 0");
     private JLabel waveLabel = new JLabel("Wave: 0");
     private JLabel bulletLabel = new JLabel("Bullet: BASIC  [1-9 to switch]");
 
+
+    private static final String SAVE_FILE = "save.dat";
+
+
+    private final WaveManager waveManager = new WaveManager();
     private int mouseX = W / 2;
     private int mouseY = H / 2;
 
@@ -58,10 +68,25 @@ public class GameWindow extends JFrame
     private static final Rectangle BTN_END_MENU = new Rectangle(300, 300, 200, 50);
     private static final Rectangle BTN_END_EXIT = new Rectangle(300, 370, 200, 50);
 
+
+    private static final Rectangle BTN_LEVEL_CONTINUE = new Rectangle(220, 360, 160, 45);
+    private static final Rectangle BTN_LEVEL_MENU     = new Rectangle(420, 360, 160, 45);
+    
+    private static final Rectangle BTN_MENU_CONTINUE = new Rectangle(300, 195, 200, 50);
+    
+
+
+
+
+
     // hover states for buttons
     private boolean hMenuStart, hMenuExit;
     private boolean hPauseResume, hPauseMenu, hPauseExit;
     private boolean hEndMenu, hEndExit;
+    private boolean hLevelContinue, hLevelMenu;
+    private boolean hMenuContinue;
+
+
 
     public GameWindow() {
         super("Last Stand");
@@ -110,6 +135,7 @@ public class GameWindow extends JFrame
         treasure = new Treasure(W / 2, 330);
         activeMonsters = new ArrayList<>();
         bullets = new ArrayList<>();
+        waveManager.reset();
         monstersKilled = 0;
         currentWave = 0;
         lastShotTime = 0;
@@ -147,12 +173,15 @@ public class GameWindow extends JFrame
         }
     }
 
-    public void setBulletType(BulletType type) {
-        if (player != null) {
-            player.setBulletType(type);
-            bulletLabel.setText("Bullet: " + type.name() + "  [1-9 to switch]");
-        }
+public void setBulletType(BulletType type) {
+    if (player == null) return;
+    if (!waveManager.getUnlockedBullets().contains(type)) {
+        bulletLabel.setText("Bullet: " + type.name() + " (locked!)  [1-9 to switch]");
+        return;
     }
+    player.setBulletType(type);
+    bulletLabel.setText("Bullet: " + type.name() + "  [1-9 to switch]");
+}
 
     // Update
     public void gameUpdate() {
@@ -212,30 +241,52 @@ public class GameWindow extends JFrame
 
             // Remove dead monsters and tally score
             Iterator<Monster> mi = activeMonsters.iterator();
-            while (mi.hasNext()) {
-                Monster m = mi.next();
-                if (!m.isReadyToRemove()) continue;
+           while (mi.hasNext()) {
+            Monster m = mi.next();
 
-                if (m instanceof SplitSlime ss) {
-                    if (ss.isFullyDead()) { monstersKilled++; mi.remove(); }
-                } else if (!(m instanceof MiniSlime)) {
+            if (m instanceof MiniSlime mini) {
+                if (mini.isReadyToRemove()) mi.remove();
+                continue;
+            }
+
+            if (m instanceof SplitSlime ss) {
+                if (ss.isReadyToRemove() && ss.isFullyDead()) {
                     monstersKilled++;
                     mi.remove();
-                } else {
+                } else if (ss.isReadyToRemove() && ss.isSplitPrevented()) {
+                    monstersKilled++;
                     mi.remove();
                 }
+                continue;
             }
+
+            if (m.isReadyToRemove()) {
+                monstersKilled++;
+                mi.remove();
+            }
+        }
 
             scoreLabel.setText("Score: " + monstersKilled);
 
-            if (monstersKilled >= MAX_MONSTERS) {
+           if (waveManager.isFinished() && activeMonsters.isEmpty()) {
                 waveLabel.setText("You win at wave " + currentWave + "!");
                 scoreLabel.setText("Final Score: " + monstersKilled);
                 endGame(true);
                 return;
             }
 
-            if (activeMonsters.isEmpty()) spawnWave();
+            if (activeMonsters.isEmpty() && !waveManager.isFinished()) {
+                // Check if we just finished a level boundary (every 3 waves)
+                if (currentWave > 0 && currentWave % 3 == 0) {
+                    completedLevel = waveManager.getCurrentLevel();
+                    saveProgress();
+                    state = GameState.LEVEL_COMPLETE;
+                    gameStarted = false;
+                    soundManager.stopClip("background");
+                } else {
+                    spawnWave();
+                }
+            }
 
         } catch (Exception e) {
             System.out.println("Error during game update: " + e.getMessage());
@@ -252,6 +303,7 @@ public class GameWindow extends JFrame
             case MENU -> drawMenu(g);
             case PLAYING -> { drawGameScene(g); drawHUD(g); }
             case PAUSED -> { drawGameScene(g); drawHUD(g); drawPauseOverlay(g); }
+            case LEVEL_COMPLETE -> { drawGameScene(g); drawLevelCompleteOverlay(g); }
             case GAME_OVER -> drawEndScreen(g, false);
             case WIN -> drawEndScreen(g, true);
         }
@@ -264,6 +316,30 @@ public class GameWindow extends JFrame
             scr.dispose();
         }
     }
+
+
+
+private void saveProgress() {
+    try (PrintWriter pw = new PrintWriter(new FileWriter(SAVE_FILE))) {
+        pw.println(currentWave);
+        pw.println(monstersKilled);
+        pw.println(completedLevel);
+    } catch (IOException ignored) {}
+}
+
+private int[] loadProgress() {
+    try {
+        List<String> lines = Files.readAllLines(Path.of(SAVE_FILE));
+        return new int[]{ Integer.parseInt(lines.get(0).trim()),
+                          Integer.parseInt(lines.get(1).trim()),
+                          Integer.parseInt(lines.get(2).trim()) };
+    } catch (Exception e) { return null; }
+}
+
+
+
+
+
 
     public boolean isGameStarted() { return gameStarted; }
     public ArrayList<Monster> getMonsters()   { return activeMonsters; }
@@ -280,71 +356,66 @@ public class GameWindow extends JFrame
     }
 
     private void spawnWave() {
-        if (monstersKilled >= MAX_MONSTERS) return;
+    if (waveManager.isFinished()) return;
 
-        currentWave++;
-        waveLabel.setText("Wave: " + currentWave);
+    WaveManager.SpawnData data = waveManager.nextWave();
+    currentWave = data.wave;
+    waveLabel.setText("Wave: " + currentWave + "  |  Level: " + data.level);
 
-        int remaining = MAX_MONSTERS - monstersKilled;
-        int waveSize  = Math.min(random.nextInt(4) + 1, remaining);
+    for (Class<? extends Monster> type : data.monsterTypes) {
+        int spawnSide = random.nextInt(2);
+        int baseX     = (spawnSide == 0) ? -50 : W + 50;
+        int xPos      = (spawnSide == 0)
+                ? baseX - random.nextInt(200)
+                : baseX + random.nextInt(200);
 
-        for (int i = 0; i < waveSize; i++) {
+        Monster m = createMonster(type, xPos, 350);
+        m.sharedMonsterList = activeMonsters;
 
-            int spawnSide = random.nextInt(2);
-            int baseX     = (spawnSide == 0) ? -50 : W + 50;
-            int xPos      = (spawnSide == 0)
-                    ? baseX - random.nextInt(200)
-                    : baseX + random.nextInt(200);
-
-            Monster newMonster = createMonster(random.nextInt(9), xPos);
-            newMonster.sharedMonsterList = activeMonsters;
-
-            boolean clash;
-            int safety = 0;
-            do {
-                clash = false;
-                for (Monster m : activeMonsters) {
-                    if (newMonster.getBoundingRectangle().intersects(m.getBoundingRectangle())) {
-                        newMonster.x += (spawnSide == 0) ? -50 : 50;
-                        clash = true;
-                    }
+        boolean clash;
+        int safety = 0;
+        do {
+            clash = false;
+            for (Monster existing : activeMonsters) {
+                if (m.getBoundingRectangle().intersects(existing.getBoundingRectangle())) {
+                    m.x += (spawnSide == 0) ? -50 : 50;
+                    clash = true;
                 }
-            } while (clash && ++safety < 10);
+            }
+        } while (clash && ++safety < 10);
 
-            activeMonsters.add(newMonster);
-        }
+        activeMonsters.add(m);
     }
-
-    private Monster createMonster(int type, int xPos) {
-        return switch (type) {
-            case 0  -> new Snake (gameArea, xPos, 350, player, treasure);
-            case 1  -> new Ghost (gameArea, xPos, 350, player, treasure);
-            case 2  -> new ArmoredTurtle (gameArea, xPos, 350, player, treasure);
-            case 3  -> new FireImp (gameArea, xPos, 350, player, treasure);
-            case 4  -> new SplitSlime (gameArea, xPos, 330, player, treasure);
-            case 5  -> new Healer (gameArea, xPos, 350, player, treasure);
-            case 6  -> new ShieldGuardian (gameArea, xPos, 330, player, treasure);
-            case 7  -> new BerserkerOrc (gameArea, xPos, 350, player, treasure);
-            default -> new ShadowWalker (gameArea, xPos, 350, player, treasure);
-        };
+}
+   
+  // method to create monsters based on class type, used in wave spawning
+    private Monster createMonster(Class<? extends Monster> type, int xPos, int yPos) {
+        if (type == Snake.class)          return new Snake(gameArea, xPos, yPos, player, treasure);
+        if (type == Ghost.class)          return new Ghost(gameArea, xPos, yPos, player, treasure);
+        if (type == ShadowWalker.class)   return new ShadowWalker(gameArea, xPos, yPos, player, treasure);
+        if (type == ArmoredTurtle.class)  return new ArmoredTurtle(gameArea, xPos, yPos, player, treasure);
+        if (type == FireImp.class)        return new FireImp(gameArea, xPos, yPos, player, treasure);
+        if (type == SplitSlime.class)     return new SplitSlime(gameArea, xPos, yPos-20, player, treasure);
+        if (type == Healer.class)         return new Healer(gameArea, xPos, yPos, player, treasure);
+        if (type == ShieldGuardian.class) return new ShieldGuardian(gameArea, xPos, yPos, player, treasure);
+        if (type == BerserkerOrc.class)   return new BerserkerOrc(gameArea, xPos, yPos, player, treasure);
+        return new Snake(gameArea, xPos, yPos, player, treasure);
     }
 
     // Scene Drawing
 
-    private void drawGameScene(Graphics2D g) {
-        g.setColor(new Color(135, 206, 235));
-        g.fillRect(0, 0, W, H);
-        g.setColor(new Color(155, 118, 83));
-        g.fillRect(0, 390, W, H - 390);
+private void drawGameScene(Graphics2D g) {
+    g.setColor(new Color(135, 206, 235));
+    g.fillRect(0, 0, W, H);
+    g.setColor(new Color(155, 118, 83));
+    g.fillRect(0, 390, W, H - 390);
 
-        if (treasure != null) treasure.draw(g);
-        if (player   != null) player.draw(g);
-        for (Monster m : activeMonsters) m.draw(g);
-        for (Bullet  b : bullets)        b.draw(g);
+    if (treasure != null) treasure.draw(g);
+    if (player   != null) player.draw(g);
 
-        for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
-        for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
-    }
+    for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
+    for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
+}
 
     private void drawHUD(Graphics2D g) {
         g.setColor(new Color(0, 0, 0, 170));
@@ -367,15 +438,24 @@ public class GameWindow extends JFrame
 
         g.setFont(new Font("Arial", Font.BOLD, 54));
         g.setColor(new Color(255, 220, 0));
-        drawCentred(g, "Treasure Defender", 150);
+        drawCentred(g, "Treasure Defender", 100);
 
         g.setFont(new Font("Arial", Font.ITALIC, 18));
         g.setColor(new Color(200, 200, 200));
-        drawCentred(g, "Defeat the monsters! and Protect the treasure", 196);
+        drawCentred(g, "Defeat the monsters! and Protect the treasure", 136);
 
         g.setFont(new Font("Monospaced", Font.PLAIN, 12));
         g.setColor(new Color(150, 150, 150));
-        drawCentred(g, "← →  Move     Mouse  Aim & Shoot     1-9  Switch bullet     ESC  Pause", 445);
+        drawCentred(g, "← →  Move     Mouse  Aim & Shoot     1-9  Switch bullet     ESC  Pause", 415);
+
+
+        int[] save = loadProgress();
+        if (save != null) {
+            g.setFont(new Font("Arial", Font.BOLD, 16));
+            g.setColor(new Color(255, 120, 180));
+            drawCentred(g, "Saved: Wave: " + save[0] + "  Score: " + save[1] + "  Level: " + save[2], 170);
+            drawBtn(g, BTN_MENU_CONTINUE, "Continue", hMenuContinue, new Color(50,70,135), new Color(70,105,195));
+        }
 
         drawBtn(g, BTN_MENU_START, "Start Game", hMenuStart, new Color(30,120,30), new Color(50,190,50));
         drawBtn(g, BTN_MENU_EXIT,  "Exit",        hMenuExit,  new Color(120,30,30), new Color(190,50,50));
@@ -409,6 +489,51 @@ public class GameWindow extends JFrame
         drawBtn(g, BTN_END_MENU, "Main Menu", hEndMenu, new Color(50,70,135), new Color(70,105,195));
         drawBtn(g, BTN_END_EXIT, "Exit",      hEndExit, new Color(120,30,30), new Color(190,50,50));
     }
+
+
+  private void drawLevelCompleteOverlay(Graphics2D g) {
+    g.setColor(new Color(0, 0, 0, 200));
+    g.fillRect(0, 0, W, H);
+
+    g.setFont(new Font("Arial", Font.BOLD, 48));
+    g.setColor(new Color(255, 215, 0));
+    drawCentred(g, "LEVEL " + completedLevel + " COMPLETE!", 130);
+
+    g.setFont(new Font("Arial", Font.PLAIN, 20));
+    g.setColor(Color.WHITE);
+    drawCentred(g, "Waves cleared: " + currentWave + "   |   Score: " + monstersKilled, 185);
+
+    // Unlocked bullets
+    g.setFont(new Font("Arial", Font.BOLD, 16));
+    g.setColor(new Color(100, 220, 255));
+    drawCentred(g, "Bullets unlocked:", 230);
+    g.setFont(new Font("Arial", Font.PLAIN, 15));
+    StringBuilder bullets = new StringBuilder();
+    for (BulletType bt : waveManager.getUnlockedBullets()) {
+        if (bullets.length() > 0) bullets.append("  |  ");
+        bullets.append(bt.name());
+    }
+    drawCentred(g, bullets.toString(), 258);
+
+    // Next level preview
+    int nextLevel = completedLevel + 1;
+    g.setFont(new Font("Arial", Font.ITALIC, 15));
+    g.setColor(new Color(180, 180, 180));
+    drawCentred(g, "Next: Level " + nextLevel + "  (Waves " + (currentWave + 1) + "–" + (currentWave + 3) + ")", 300);
+
+    drawBtn(g, BTN_LEVEL_CONTINUE, "Continue",  hLevelContinue, new Color(30,120,30),  new Color(50,190,50));
+    drawBtn(g, BTN_LEVEL_MENU,     "Main Menu", hLevelMenu,     new Color(50,70,135),   new Color(70,105,195));
+}
+
+
+
+
+
+
+
+
+
+
 
     private void drawCentred(Graphics2D g, String text, int y) {
         FontMetrics fm = g.getFontMetrics();
@@ -470,6 +595,22 @@ public class GameWindow extends JFrame
             case MENU     -> {
                 if      (BTN_MENU_START.contains(x, y)) startGame();
                 else if (BTN_MENU_EXIT.contains(x, y))  System.exit(0);
+                else if (BTN_MENU_CONTINUE.contains(x, y)) {
+                int[] save = loadProgress();
+                if (save != null) {
+                    createGameEntities();
+                    // fast-forward WaveManager to the saved wave
+                    for (int i = 0; i < save[0]; i++) waveManager.nextWave();
+                    currentWave    = save[0];
+                    monstersKilled = save[1];
+                    completedLevel = save[2];
+                    scoreLabel.setText("Score: " + monstersKilled);
+                    state       = GameState.PLAYING;
+                    gameStarted = true;
+                    soundManager.playClip("background", true);
+                    spawnWave();
+                }
+            }
             }
             case PLAYING  -> shootBullet(x, y);
             case PAUSED   -> {
@@ -477,10 +618,25 @@ public class GameWindow extends JFrame
                 else if (BTN_PAUSE_MENU.contains(x, y))   stopGame();
                 else if (BTN_PAUSE_EXIT.contains(x, y))   System.exit(0);
             }
+
+            case LEVEL_COMPLETE -> {
+                    if (BTN_LEVEL_CONTINUE.contains(x, y)) {
+                        gameStarted = true;
+                        state = GameState.PLAYING;
+                    //    soundManager.playClip("background", true);
+                        spawnWave();
+                    } else if (BTN_LEVEL_MENU.contains(x, y)) {
+                        stopGame();
+                    }
+                }
+
+
+
             case GAME_OVER, WIN -> {
                 if      (BTN_END_MENU.contains(x, y)) state = GameState.MENU;
                 else if (BTN_END_EXIT.contains(x, y)) System.exit(0);
             }
+
         }
     }
 
@@ -514,5 +670,8 @@ public class GameWindow extends JFrame
         hPauseExit = BTN_PAUSE_EXIT.contains(x, y);
         hEndMenu = BTN_END_MENU.contains(x, y);
         hEndExit = BTN_END_EXIT.contains(x, y);
+        hLevelContinue = BTN_LEVEL_CONTINUE.contains(x, y);
+        hLevelMenu     = BTN_LEVEL_MENU.contains(x, y);
+        hMenuContinue = BTN_MENU_CONTINUE.contains(x, y);
     }
 }

@@ -22,6 +22,7 @@ public class FireImp extends Monster {
     private int paceDirection;
     private int shootTimer;
     private int phaseTimer;
+    private boolean impFacingLeft;
 
     private static final int SHOOT_INTERVAL = 50;
     private static final int STOP_DISTANCE  = 280;
@@ -47,6 +48,7 @@ public class FireImp extends Monster {
         phaseTimer    = 0;
         phase         = Phase.WALKING_TO_STOP;
         stopX         = -1;
+        impFacingLeft = (xPos >= 0);
 
         fireballImage = ImageManager.loadImage("images/fire_imp/fireball.png");
         fireballs     = new ArrayList<>();
@@ -82,38 +84,19 @@ public class FireImp extends Monster {
     }
 
     private Animation getCurrentWalkAnimation() {
-        return (dx <= 0) ? walkLeftAnimation : walkRightAnimation;
+        if (isFrozen()) {
+            return (getSavedDx() <= 0) ? walkLeftAnimation : walkRightAnimation;
+        }
+        return impFacingLeft ? walkLeftAnimation : walkRightAnimation;
     }
 
     private Image getCurrentFlyImage() {
-        if (paceDirection < 0) {
-            return (dx < 0) ? flyForwardLeftImage : flyBackwardLeftImage;
+        if (impFacingLeft) {
+            return (paceDirection < 0) ? flyForwardLeftImage : flyBackwardLeftImage;
         } else {
-            return (dx > 0) ? flyForwardRightImage : flyBackwardRightImage;
+            return (paceDirection > 0) ? flyForwardRightImage : flyBackwardRightImage;
         }
     }
-
-@Override
-protected void drawStatusEffects(Graphics2D g2) {
-    if (!isBurning() && !isFrozen()) return;
-
-    Image raw;
-    if (phase == Phase.FLYING || phase == Phase.RISING || phase == Phase.DESCENDING) {
-        raw = getCurrentFlyImage();
-    } else {
-        raw = getCurrentWalkAnimation().getImage();
-    }
-
-    if (raw == null) return;
-
- BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D fg = frame.createGraphics();
-    fg.drawImage(raw, 0, 0, width, height, null);
-    fg.dispose();
-
-    if (isBurning()) burnFX.draw(g2, frame, x, y, width, height);
-    if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
-}
 
     @Override
     public void takeDamage(int amount) {
@@ -122,7 +105,7 @@ protected void drawStatusEffects(Graphics2D g2) {
         if (hp <= 0) {
             hp = 0;
             dying = true;
-            facingLeft = (dx <= 0);
+            facingLeft = impFacingLeft;
             deathLeftAnimation.start();
             deathRightAnimation.start();
             playDeathSound();
@@ -152,6 +135,7 @@ protected void drawStatusEffects(Graphics2D g2) {
 
             case WALKING_TO_STOP:
                 x += dx;
+                impFacingLeft = (dx < 0);
                 getCurrentWalkAnimation().update();
 
                 if ((dx > 0 && x >= stopX) || (dx < 0 && x <= stopX)) {
@@ -164,6 +148,7 @@ protected void drawStatusEffects(Graphics2D g2) {
 
             case GROUND_PACE:
                 x += dx;
+                impFacingLeft = (dx < 0);
                 getCurrentWalkAnimation().update();
 
                 if (x <= stopX - PACE_RANGE) { dx = PACE_SPEED;  paceDirection =  1; }
@@ -183,6 +168,7 @@ protected void drawStatusEffects(Graphics2D g2) {
             case RISING:
                 x += dx;
                 y += dy;
+                impFacingLeft = (dx < 0);
                 getCurrentWalkAnimation().update();
 
                 if (x <= stopX - PACE_RANGE) { dx = PACE_SPEED;  paceDirection =  1; }
@@ -198,6 +184,7 @@ protected void drawStatusEffects(Graphics2D g2) {
 
             case FLYING:
                 x += dx;
+                impFacingLeft = (dx < 0);
 
                 if (x <= stopX - PACE_RANGE) { dx = PACE_SPEED;  paceDirection =  1; }
                 if (x >= stopX + PACE_RANGE) { dx = -PACE_SPEED; paceDirection = -1; }
@@ -216,6 +203,7 @@ protected void drawStatusEffects(Graphics2D g2) {
             case DESCENDING:
                 x += dx;
                 y += dy;
+                impFacingLeft = (dx < 0);
 
                 if (x <= stopX - PACE_RANGE) { dx = PACE_SPEED;  paceDirection =  1; }
                 if (x >= stopX + PACE_RANGE) { dx = -PACE_SPEED; paceDirection = -1; }
@@ -268,6 +256,7 @@ protected void drawStatusEffects(Graphics2D g2) {
         dx = (x < 0) ? 5 : -5;
         dy = 0;
         paceDirection = (x < 0) ? 1 : -1;
+        impFacingLeft = (x >= 0);
         stopX      = -1;
         phase      = Phase.WALKING_TO_STOP;
         phaseTimer = 0;
@@ -283,22 +272,27 @@ protected void drawStatusEffects(Graphics2D g2) {
             return;
         }
 
+        Image raw;
         if (phase == Phase.FLYING || phase == Phase.RISING || phase == Phase.DESCENDING) {
-            g2.drawImage(getCurrentFlyImage(), x, y, width, height, null);
+            raw = getCurrentFlyImage();
         } else {
-            g2.drawImage(getCurrentWalkAnimation().getImage(), x, y, width, height, null);
+            raw = getCurrentWalkAnimation().getImage();
         }
-        
 
-    drawStatusEffects(g2);
-        for (Fireball fb : fireballs) {
-            fb.draw(g2);
-        }
+        BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D fg = frame.createGraphics();
+        fg.drawImage(raw, 0, 0, width, height, null);
+        fg.dispose();
+
+        if (isBurning()) frame = burnFX.applyToFrame(frame);
+        if (isFrozen())  frame = freezeFX.applyToFrame(frame);
+
+        g2.drawImage(frame, x, y, width, height, null);
+
+        for (Fireball fb : fireballs) fb.draw(g2);
 
         drawHealthBar(g2);
     }
-
-
 
     @Override
     public boolean isImmuneToFire() { return true; }

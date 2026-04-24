@@ -1,5 +1,6 @@
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
 public class ShieldGuardian extends Monster {
@@ -67,17 +68,16 @@ public class ShieldGuardian extends Monster {
         initStopX();
 
         if (!reachedStop) {
-            x += dx;
-            facingLeft = (dx < 0);
-            getWalkAnimation().update();
+    x += dx;
+    facingLeft = (dx < 0);
+    getWalkAnimation().update();
 
-            if ((dx > 0 && x >= stopX) || (dx < 0 && x <= stopX)) {
-                x          = stopX;
-                dx         = 0;
-                reachedStop = true;
-            }
-        }
-
+    if ((dx > 0 && x >= stopX) || (dx < 0 && x <= stopX)) {
+        x           = stopX;
+        dx          = 0;
+        reachedStop = true;
+    }
+}
         shield.update(x, y, width, facingLeft);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
@@ -93,17 +93,17 @@ public class ShieldGuardian extends Monster {
 
     @Override
     public void takeDamage(int amount) {
-        if (dying) return;
-        hp -= amount;
-        if (hp <= 0) {
-            hp = 0;
-            dying = true;
-            facingLeft = (dx <= 0);
-            if (deathLeftAnimation  != null) deathLeftAnimation.start();
-            if (deathRightAnimation != null) deathRightAnimation.start();
-            playDeathSound();
+            if (dying) return;
+            hp -= amount;
+            if (hp <= 0) {
+                hp = 0;
+                dying = true;
+                facingLeft = reachedStop ? facingLeft : (dx <= 0);
+                if (deathLeftAnimation  != null) deathLeftAnimation.start();
+                if (deathRightAnimation != null) deathRightAnimation.start();
+                playDeathSound();
+            }
         }
-    }
 
     @Override
     public void draw(Graphics2D g2) {
@@ -113,11 +113,26 @@ public class ShieldGuardian extends Monster {
             return;
         }
 
-        g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
+        BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D fg = frame.createGraphics();
+        fg.drawImage(getWalkAnimation().getImage(), 0, 0, width, height, null);
+        fg.dispose();
+
+        if (isBurning()) frame = burnFX.applyToFrame(frame);
+        if (isFrozen())  frame = freezeFX.applyToFrame(frame);
+
+        g2.drawImage(frame, x, y, width, height, null);
         shield.draw(g2);
-        drawStatusEffects(g2);
         drawHealthBar(g2);
     }
+
+    // @Override
+    // protected Animation getWalkAnimation() {
+    //     if (isFrozen()) {
+    //         return (getSavedDx() <= 0) ? walkLeftAnimation : walkRightAnimation;
+    //     }
+    //     return facingLeft ? walkLeftAnimation : walkRightAnimation;
+    // }
 
     @Override
     protected Image getImage() {

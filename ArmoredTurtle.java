@@ -1,4 +1,3 @@
-import java.awt.Graphics2D;
 import java.awt.Image;
 import javax.swing.JPanel;
 
@@ -14,7 +13,7 @@ public class ArmoredTurtle extends Monster {
 
         dx = (xPos < 0) ? 2 : -2;
         dy = 0;
-        hp = 250;
+        hp = 60;
         maxHp = hp;
         walkLeftAnimation = new Animation(true);
         walkRightAnimation = new Animation(true);
@@ -38,23 +37,17 @@ public class ArmoredTurtle extends Monster {
         super.move();
     }
 
-    @Override
-    public void draw(Graphics2D g2) {
-        Image frame = getCurrentAnimation().getImage();
-        g2.drawImage(frame, x, y, width, height, null);
-       
-       
-        
-    drawStatusEffects(g2);
-        drawHealthBar(g2);
-  
-    }
 
     @Override
     public void takeDamage(int damage) {
         hp -= damage / 2;
         if (isDead()) playDeathSound();
     }
+
+    @Override
+    public boolean isResistantToPiercing() { return false; }
+
+    
 
     @Override
 protected Image getImage() {

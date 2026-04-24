@@ -18,7 +18,11 @@ public class ElectricBullet extends AnimatedBullet {
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
+              if (target.isImmuneToElectricity()) {
+            return;
+        }
         target.takeDamage(damage);
+        target.applyElectrocute(6);
 
         double cx = target.getX() + target.getBoundingRectangle().width  / 2.0;
         double cy = target.getY() + target.getBoundingRectangle().height / 2.0;

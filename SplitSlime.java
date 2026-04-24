@@ -1,5 +1,4 @@
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -83,6 +82,10 @@ public class SplitSlime extends Monster {
         }
     }
 
+
+   public boolean isSplitPrevented() { return splitPrevented; }
+
+
     @Override
     public void move() {
         if (!panel.isVisible()) return;
@@ -147,7 +150,7 @@ public class SplitSlime extends Monster {
         final int MINI_WIDTH = 40;
         final int GAP = 10;
         final int SPACING = MINI_WIDTH + GAP;
-        final int MINI_HEIGHT = 45;
+        final int MINI_HEIGHT = 35;
 
         int spawnDir = (dx < 0) ? -1 : 1;
         int spawnY = y + (height - MINI_HEIGHT);
@@ -187,14 +190,27 @@ public class SplitSlime extends Monster {
     }
     return false;
 }
-
+@Override
+protected Animation getWalkAnimation() {
+    if (isFrozen()) {
+        return (getSavedDx() < 0) ? walkLeftAnimation : walkRightAnimation;
+    }
+    return facingLeft ? walkLeftAnimation : walkRightAnimation;
+}
 
     @Override
     public void draw(Graphics2D g2) {
         switch (phase) {
             case WALKING:
-                g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
-                drawStatusEffects(g2);
+                BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D fg = frame.createGraphics();
+                fg.drawImage(getWalkAnimation().getImage(), 0, 0, width, height, null);
+                fg.dispose();
+
+                if (isBurning()) frame = burnFX.applyToFrame(frame);
+                if (isFrozen())  frame = freezeFX.applyToFrame(frame);
+
+                g2.drawImage(frame, x, y, width, height, null);
                 drawHealthBar(g2);
                 break;
             case DYING:
@@ -206,19 +222,6 @@ public class SplitSlime extends Monster {
             case DEAD:
                 break;
         }
-    }
-
-    @Override
-    protected void drawStatusEffects(Graphics2D g2) {
-        if (phase != Phase.WALKING) return;
-        Image raw = getWalkAnimation().getImage();
-        if (raw == null) return;
-        BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D fg = frame.createGraphics();
-        fg.drawImage(raw, 0, 0, width, height, null);
-        fg.dispose();
-        if (isBurning()) burnFX.draw(g2, frame, x, y, width, height);
-        if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
     }
 
     @Override

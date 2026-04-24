@@ -14,7 +14,12 @@ public class SpiritBullet extends AnimatedBullet {
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
-        target.takeDamage(damage);
+        if (target.isResistantToSprit()) {
+            target.takeDamage(damage);
+        } else {
+            target.takeDamage(damage * 20);
+        }
+
         target.push(PUSH_AMOUNT);
     }
 }

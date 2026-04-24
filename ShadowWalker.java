@@ -1,10 +1,12 @@
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
 public class ShadowWalker extends Monster {
 
     private DisappearFX disappearFX;
+    private boolean permanentlyRevealed = false;
 
     public ShadowWalker(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, 30);
@@ -29,36 +31,58 @@ public class ShadowWalker extends Monster {
         walkRightAnimation.addFrame(ImageManager.loadImage("images/shadow_walker/shadow_walker_right_3.png"), 100);
         walkRightAnimation.start();
 
-        // Start with alpha = 0 so it's fully invisible from the beginning
         disappearFX = new DisappearFX(xPos, yPos, width, height, getCurrentAnimation());
-        
+        disappearFX.setFullyInvisible(); // start invisible
     }
 
     private Animation getCurrentAnimation() {
         return (dx <= 0) ? walkLeftAnimation : walkRightAnimation;
     }
 
-        @Override
-        public void move() {
-            disappearFX.setPosition(x, y);
-            disappearFX.setAnimation(getCurrentAnimation());
-            disappearFX.update(); // drives the fade back to invisible every frame
+    @Override
+    public void move() {
+        disappearFX.setPosition(x, y);
+        disappearFX.setAnimation(getCurrentAnimation());
 
-            getCurrentAnimation().update();
-            super.move();
+        if (isElectrocuted()) {
+            permanentlyRevealed = true;
+            disappearFX.reset();
         }
 
+        if (!permanentlyRevealed) {
+            disappearFX.update();
+        }
+
+        getCurrentAnimation().update();
+        super.move();
+    }
 
     @Override
     public void draw(Graphics2D g2) {
-        // Always render through disappearFX (handles full invisibility and fade states)
-        disappearFX.draw(g2);
-        if (disappearFX.getAlpha() > 0) {
+        Animation walkAnim = getWalkAnimation();
+        Image raw = (walkAnim != null) ? walkAnim.getImage() : getImage();
 
+        BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D fg = frame.createGraphics();
+        fg.drawImage(raw, 0, 0, width, height, null);
+        fg.dispose();
+
+        if (isBurning()) {
+            frame = burnFX.applyToFrame(frame);
+            if (!permanentlyRevealed) disappearFX.reset();
+        }
+        if (isFrozen()) {
+            frame = freezeFX.applyToFrame(frame);
+            if (!permanentlyRevealed) disappearFX.reset();
+        }
+        if (isElectrocuted()) {
+            disappearFX.reset();
+        }
+
+        disappearFX.drawFrame(g2, frame);
+        if (disappearFX.getAlpha() > 0) {
             drawHealthBar(g2);
         }
-        
-    drawStatusEffects(g2);
     }
 
     @Override
@@ -67,15 +91,15 @@ public class ShadowWalker extends Monster {
                 getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
             treasure.takeDamage(damage);
             soundManager.playClip("hit", false);
-            disappearFX.reset(); // alpha back to 255, update() handles fading automatically
+            if (!permanentlyRevealed) disappearFX.setFullyInvisible();
             respawn();
         }
     }
 
     @Override
-protected Image getImage() {
-    return getCurrentAnimation().getImage();
-}
+    protected Image getImage() {
+        return getCurrentAnimation().getImage();
+    }
 
     @Override
     public void playDeathSound() {
@@ -86,6 +110,7 @@ protected Image getImage() {
     protected void collideWithPlayer() {
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             soundManager.playClip("hit", false);
+            if (!permanentlyRevealed) disappearFX.setFullyInvisible();
             respawn();
         }
     }

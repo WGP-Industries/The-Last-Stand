@@ -1,4 +1,6 @@
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import javax.swing.JPanel;
 
@@ -90,8 +92,20 @@ public class Healer extends Monster {
     }
 
     public void move(ArrayList<Monster> allMonsters) {
-        super.move();
-        if (dying) return;
+        if (!panel.isVisible()) return;
+        
+        applyStatusEffects();
+        
+        if (dying) {
+            Animation anim = getDeathAnimation();
+            if (anim != null) {
+                anim.update();
+                if (!anim.isStillActive()) readyToRemove = true;
+            } else {
+                readyToRemove = true;
+            }
+            return;
+        }
 
         if (!hasEnteredScreen) {
             x += dx;
@@ -104,6 +118,7 @@ public class Healer extends Monster {
         if (phase != Phase.ROGUE && !hasValidTargets(allMonsters)) {
             phase = Phase.ROGUE;
         }
+
 
         switch (phase) {
 
@@ -164,44 +179,53 @@ public class Healer extends Monster {
                 break;
 
             case ROGUE:
-                x += dx;
-                getWalkAnimation().update();
+    x += dx;
+    getWalkAnimation().update();
 
-                if (treasure != null &&
-                    getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
-                    treasure.takeDamage(TREASURE_DAMAGE);
-                    takeDamage(999);
-                }
-                break;
+    if (treasure != null &&
+        getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
+        treasure.takeDamage(TREASURE_DAMAGE);
+        hp = 0;
+        dying = true;
+        facingLeft = (dx < 0);
+        if (deathLeftAnimation != null) deathLeftAnimation.start();
+        if (deathRightAnimation != null) deathRightAnimation.start();
+        playDeathSound();
+    }
+    break;
         }
     }
 
-    @Override
-    public void draw(Graphics2D g2) {
-        if (dying) {
-            super.draw(g2);
-            return;
+  
+        @Override
+        public void draw(Graphics2D g2) {
+            if (dying) {
+                super.draw(g2);
+                return;
+            }
+
+            Image raw;
+            switch (phase) {
+                case CHARGING_STRONG, LINGER -> raw = getStrongHealAnimation().getImage();
+                case CHARGING_WEAK           -> raw = getWeakHealAnimation().getImage();
+                default                      -> raw = getWalkAnimation().getImage();
+            }
+
+            BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D fg = frame.createGraphics();
+            fg.drawImage(raw, 0, 0, width, height, null);
+            fg.dispose();
+
+            if (isBurning()) frame = burnFX.applyToFrame(frame);
+            if (isFrozen())  frame = freezeFX.applyToFrame(frame);
+
+            g2.drawImage(frame, x, y, width, height, null);
+            drawHealthBar(g2);
         }
 
-        switch (phase) {
-            case WALKING:
-            case COOLDOWN:
-            case ROGUE:
-                g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
-                break;
 
-            case CHARGING_STRONG:
-            case LINGER:
-                g2.drawImage(getStrongHealAnimation().getImage(), x, y, width, height, null);
-                break;
 
-            case CHARGING_WEAK:
-                g2.drawImage(getWeakHealAnimation().getImage(), x, y, width, height, null);
-                break;
-        }
 
-        drawHealthBar(g2);
-    }
 
     @Override
     protected void collideWithPlayer() {

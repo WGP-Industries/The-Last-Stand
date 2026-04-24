@@ -13,14 +13,23 @@ public class Snake extends Monster {
         hp = 100;
         maxHp = hp;
 
-        monsterImageRight = ImageManager.loadImage("images/snake.png");
-        monsterImageLeft = monsterImageRight;
+        monsterImageRight = ImageManager.loadImage("images/snake/snake_right.png");
+        monsterImageLeft = ImageManager.loadImage("images/snake/snake_left.png");
     }
 
 
     @Override
     public void playDeathSound() {
         soundManager.playClip("die2", false);
+    }
+
+    @Override
+    public void takeDamage(int damage) {
+        
+        if (isFrozen()) {
+            damage = 100;
+        }
+        super.takeDamage(damage );
     }
 
     @Override

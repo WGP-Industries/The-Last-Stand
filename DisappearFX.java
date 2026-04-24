@@ -12,7 +12,7 @@ public class DisappearFX implements ImageFX {
 	private int height;
 
 	private Animation animation;
-
+ 
 	int time, timeChange;
 	int alpha, alphaChange;
 
@@ -67,33 +67,52 @@ public class DisappearFX implements ImageFX {
 		g2.drawImage(copy, x, y, width, height, null);
 	}
 
+	public void drawFrame(Graphics2D g2, BufferedImage frame) {
+		BufferedImage copy = ImageManager.copyImage(frame);
+
+		int[] pixels = new int[width * height];
+		copy.getRGB(0, 0, width, height, pixels, 0, width);
+
+		for (int i = 0; i < pixels.length; i++) {
+			int a = (pixels[i] >> 24) & 255;
+			int red = (pixels[i] >> 16) & 255;
+			int green = (pixels[i] >> 8) & 255;
+			int blue = pixels[i] & 255;
+
+			if (a != 0) {
+				pixels[i] = blue | (green << 8) | (red << 16) | (alpha << 24);
+			}
+		}
+
+		copy.setRGB(0, 0, width, height, pixels, 0, width);
+
+		g2.drawImage(copy, x, y, width, height, null);
+	}
+
 
 	public Rectangle2D.Double getBoundingRectangle() {
 		return new Rectangle2D.Double(x, y, width, height);
 	}
-public void setFullyInvisible() {
-    alpha = 0;
-}
 
-
-
+	public void setFullyInvisible() {
+    	alpha = 0;
+	}
 
     public void setAnimation(Animation anim) {
-    animation = anim;
-}
+    	animation = anim;
+	}
 
+	public int getAlpha() {
+		return alpha;
+	}
 
-public int getAlpha() {
-	return alpha;
-}
+	public void reset() {
+    	alpha = 255;
+	}
 
-public void reset() {
-    alpha = 255;
-}
-
-public void update() {
-    if (alpha > 0) {
-        alpha = Math.max(0, alpha - alphaChange);
-    }
-}
+	public void update() {
+    	if (alpha > 0) {
+        	alpha = Math.max(0, alpha - alphaChange);
+    	}
+	}
 }

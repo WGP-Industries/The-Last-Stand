@@ -22,6 +22,9 @@ public class FreezeBullet extends AnimatedBullet {
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
+        if (target.isImmuneToFreeze()) {
+            return;
+        }
         int actualDamage = (target instanceof SplitSlime) ? damage * 2 : damage;
         target.applyFreeze(FREEZE_TICKS);
         if (target.isFrozen()) actualDamage = (int)(actualDamage * 1.5);
