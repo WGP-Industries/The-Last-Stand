@@ -31,7 +31,8 @@ public class GameWindow extends JFrame
 
     // Game Variables
 
-    private static final int MAX_MONSTERS = 10;
+    private static final int MAX_MONSTERS  = 10;
+    private static final int STOMP_DAMAGE  = 40;   // HP removed from a monster per stomp
 
     private Player player;
     private Treasure treasure;
@@ -191,6 +192,12 @@ public void setBulletType(BulletType type) {
             scoreLabel.setText("Final Score: " + monstersKilled);
             endGame(false);
             return;
+        }
+
+        // Apply jump / gravity physics every tick
+        if (player != null) {
+            player.updatePhysics();
+            checkStompCollisions();
         }
 
         try {
@@ -387,8 +394,36 @@ private int[] loadProgress() {
         activeMonsters.add(m);
     }
 }
-   
-  // method to create monsters based on class type, used in wave spawning
+
+
+private void checkStompCollisions() {
+        if (!player.isFalling()) return;
+
+        java.awt.geom.Rectangle2D.Double playerRect = player.getBoundingRectangle();
+        int playerFeetY = (int)(playerRect.y + playerRect.height);
+
+        for (Monster m : activeMonsters) {
+            if (m.isDead()) continue;
+
+            java.awt.geom.Rectangle2D.Double monsterRect = m.getBoundingRectangle();
+            int monsterTopY = (int) monsterRect.y;
+
+            boolean hOverlap = playerRect.x + playerRect.width > monsterRect.x
+                             && playerRect.x < monsterRect.x + monsterRect.width;
+
+            boolean inStompZone = playerFeetY >= monsterTopY
+                                && playerFeetY <= monsterTopY + 20;
+
+            if (hOverlap && inStompZone) {
+                m.takeDamage(STOMP_DAMAGE);
+                player.bounce();
+                soundManager.playClip("hit", false);
+                break;
+            }
+        }
+    }
+
+    // method to create monsters based on class type, used in wave spawning
     private Monster createMonster(Class<? extends Monster> type, int xPos, int yPos) {
         if (type == Snake.class)          return new Snake(gameArea, xPos, yPos, player, treasure);
         if (type == Ghost.class)          return new Ghost(gameArea, xPos, yPos, player, treasure);
@@ -565,9 +600,9 @@ private void drawGameScene(Graphics2D g) {
                 else if (state == GameState.PAUSED)  state = GameState.PLAYING;
             }
 
-            case KeyEvent.VK_LEFT  -> updatePlayer(1);
-            case KeyEvent.VK_RIGHT -> updatePlayer(2);
-            case KeyEvent.VK_SPACE -> shootBullet(mouseX, mouseY);
+            case KeyEvent.VK_LEFT  -> { if (player != null) player.setMovingLeft(true);  }
+            case KeyEvent.VK_RIGHT -> { if (player != null) player.setMovingRight(true); }
+            case KeyEvent.VK_SPACE -> { if (player != null && gameStarted) player.jump(); }
 
             case KeyEvent.VK_1 -> setBulletType(BulletType.BASIC);
             case KeyEvent.VK_2 -> setBulletType(BulletType.FIRE);
@@ -581,7 +616,12 @@ private void drawGameScene(Graphics2D g) {
         }
     }
 
-    @Override public void keyReleased(KeyEvent e) {}
+    @Override
+    public void keyReleased(KeyEvent e) {
+        if (player == null) return;
+        if (e.getKeyCode() == KeyEvent.VK_LEFT)  player.setMovingLeft(false);
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) player.setMovingRight(false);
+    }
     @Override public void keyTyped   (KeyEvent e) {}
 
     // MouseListener

@@ -13,8 +13,21 @@ public class Player {
     private int width;
     private int height;
 
-    private int dx;
-    private int dy;
+    // Horizontal movement
+    private float velocityX = 0f;
+    private boolean movingLeft = false;
+    private boolean movingRight = false;
+    private static final float MAX_SPEED_X = 8f;
+    private static final float ACCELERATION = 1.5f;
+    private static final float DECELERATION = 2.0f;
+
+    // Vertical / jump physics
+    private float velocityY = 0f;
+    private static final float GRAVITY = 0.8f;
+    private static final float JUMP_STRENGTH = -14f;
+    private static final float MAX_FALL = 18f;
+    private static final int   GROUND_Y = 340;
+    private boolean isOnGround = false;
 
 
 
@@ -31,18 +44,31 @@ public class Player {
 
         backgroundColour = panel.getBackground();
         x = xPos;
-        y = yPos;
+        y = GROUND_Y;
 
-        dx = 10;
-        dy = 0;
-
-        width = 50;
+        width  = 50;
         height = 50;
 
         playerLeftImage = ImageManager.loadImage("images/player_left.png");
         playerRightImage = ImageManager.loadImage("images/player_right.png");
 
         playerImage = playerRightImage;
+    }
+
+    public boolean isFalling() {
+        return !isOnGround && velocityY > 0;
+    }
+
+    public void bounce() {
+        velocityY  = JUMP_STRENGTH * 0.7f;   // 70% of a full jump so it feels lighter
+        isOnGround = false;
+    }
+
+    public void jump() {
+        if (isOnGround) {
+            velocityY  = JUMP_STRENGTH;
+            isOnGround = false;
+        }
     }
 
     public void draw(Graphics2D g2) {
@@ -59,21 +85,49 @@ public class Player {
         g.dispose();
     }
 
-    public void move(int direction) {
-        if (!panel.isVisible())
-            return;
+    public void setMovingLeft(boolean held)  { movingLeft  = held; }
+    public void setMovingRight(boolean held) { movingRight = held; }
 
+    public void updatePhysics() {
+        updateHorizontal();
+        updateVertical();
+    }
+
+    private void updateHorizontal() {
         int panelWidth = panel.getWidth();
-        if (direction == 1) {
-            x = x - dx;
+
+        if (movingLeft && !movingRight) {
+            velocityX = Math.max(velocityX - ACCELERATION, -MAX_SPEED_X);
             playerImage = playerLeftImage;
-            if (x < 0)
-                x = 0;
-        } else if (direction == 2) {
-            x           += dx;
-            playerImage  = playerRightImage;
-            if (x > panelWidth - width) x = panelWidth - width;
+        } else if (movingRight && !movingLeft) {
+            velocityX = Math.min(velocityX + ACCELERATION, MAX_SPEED_X);
+            playerImage = playerRightImage;
+        } else {
+            if (velocityX > 0) velocityX = Math.max(velocityX - DECELERATION, 0f);
+            else if (velocityX < 0) velocityX = Math.min(velocityX + DECELERATION, 0f);
         }
+
+        x += (int) velocityX;
+        if (x < 0)                    { x = 0;                   velocityX = 0; }
+        if (x > panelWidth - width)   { x = panelWidth - width;  velocityX = 0; }
+    }
+
+    private void updateVertical() {
+        if (!isOnGround) {
+            velocityY += GRAVITY;
+            if (velocityY > MAX_FALL) velocityY = MAX_FALL;
+            y += (int) velocityY;
+            if (y >= GROUND_Y) {
+                y          = GROUND_Y;
+                velocityY  = 0f;
+                isOnGround = true;
+            }
+        }
+    }
+
+    public void move(int direction) {
+        if (direction == 1) setMovingLeft(true);
+        else if (direction == 2) setMovingRight(true);
     }
 
         public void push(int amount) {
