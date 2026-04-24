@@ -27,7 +27,8 @@ public class GameWindow extends JFrame
 
     // Game Variables
 
-    private static final int MAX_MONSTERS = 10;
+    private static final int MAX_MONSTERS  = 10;
+    private static final int STOMP_DAMAGE  = 40;   // HP removed from a monster per stomp
 
     private Player player;
     private Treasure treasure;
@@ -162,6 +163,12 @@ public class GameWindow extends JFrame
             scoreLabel.setText("Final Score: " + monstersKilled);
             endGame(false);
             return;
+        }
+
+        // Apply jump / gravity physics every tick
+        if (player != null) {
+            player.updatePhysics();
+            checkStompCollisions();
         }
 
         try {
@@ -315,6 +322,36 @@ public class GameWindow extends JFrame
         }
     }
 
+    // Bonce physics 
+    private void checkStompCollisions() {
+        if (!player.isFalling()) return;
+
+        java.awt.geom.Rectangle2D.Double playerRect = player.getBoundingRectangle();
+        int playerFeetY = (int)(playerRect.y + playerRect.height);
+
+        for (Monster m : activeMonsters) {
+            if (m.isDead()) continue;
+
+            java.awt.geom.Rectangle2D.Double monsterRect = m.getBoundingRectangle();
+            int monsterTopY = (int) monsterRect.y;
+
+            // Horizontal overlap
+            boolean hOverlap = playerRect.x + playerRect.width > monsterRect.x
+                             && playerRect.x < monsterRect.x + monsterRect.width;
+
+            // Feet must land in the top 20-px band of the monster's head
+            boolean inStompZone = playerFeetY >= monsterTopY
+                                && playerFeetY <= monsterTopY + 20;
+
+            if (hOverlap && inStompZone) {
+                m.takeDamage(STOMP_DAMAGE);
+                player.bounce();
+                soundManager.playClip("hit", false);
+                break;
+            }
+        }
+    }
+
     private Monster createMonster(int type, int xPos) {
         return switch (type) {
             case 0  -> new Snake (gameArea, xPos, 350, player, treasure);
@@ -440,9 +477,9 @@ public class GameWindow extends JFrame
                 else if (state == GameState.PAUSED)  state = GameState.PLAYING;
             }
 
-            case KeyEvent.VK_LEFT  -> updatePlayer(1);
-            case KeyEvent.VK_RIGHT -> updatePlayer(2);
-            case KeyEvent.VK_SPACE -> shootBullet(mouseX, mouseY);
+            case KeyEvent.VK_LEFT  -> { if (player != null) player.setMovingLeft(true);  }
+            case KeyEvent.VK_RIGHT -> { if (player != null) player.setMovingRight(true); }
+            case KeyEvent.VK_SPACE -> { if (player != null && gameStarted) player.jump(); }
 
             case KeyEvent.VK_1 -> setBulletType(BulletType.BASIC);
             case KeyEvent.VK_2 -> setBulletType(BulletType.FIRE);
@@ -456,7 +493,12 @@ public class GameWindow extends JFrame
         }
     }
 
-    @Override public void keyReleased(KeyEvent e) {}
+    @Override
+    public void keyReleased(KeyEvent e) {
+        if (player == null) return;
+        if (e.getKeyCode() == KeyEvent.VK_LEFT)  player.setMovingLeft(false);
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) player.setMovingRight(false);
+    }
     @Override public void keyTyped   (KeyEvent e) {}
 
     // MouseListener
