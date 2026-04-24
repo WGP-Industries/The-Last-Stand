@@ -31,7 +31,7 @@ public class GameWindow extends JFrame
 
     // Game Variables
 
-    private static final int MAX_MONSTERS  = 10;
+   // private static final int MAX_MONSTERS  = 10;
     private static final int STOMP_DAMAGE  = 40;   // HP removed from a monster per stomp
 
     private Player player;
@@ -640,7 +640,7 @@ private void drawGameScene(Graphics2D g) {
                 if (save != null) {
                     createGameEntities();
                     // fast-forward WaveManager to the saved wave
-                    for (int i = 0; i < save[0]; i++) waveManager.nextWave();
+                    for (int i = 0; i < save[0] - 1; i++) waveManager.nextWave();
                     currentWave    = save[0];
                     monstersKilled = save[1];
                     completedLevel = save[2];
@@ -661,10 +661,11 @@ private void drawGameScene(Graphics2D g) {
 
             case LEVEL_COMPLETE -> {
                     if (BTN_LEVEL_CONTINUE.contains(x, y)) {
+                           spawnWave();
                         gameStarted = true;
                         state = GameState.PLAYING;
                     //    soundManager.playClip("background", true);
-                        spawnWave();
+                   
                     } else if (BTN_LEVEL_MENU.contains(x, y)) {
                         stopGame();
                     }
