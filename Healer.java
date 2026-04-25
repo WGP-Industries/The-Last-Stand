@@ -119,6 +119,8 @@ public class Healer extends Monster {
             phase = Phase.ROGUE;
         }
 
+        
+
           if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
         collideWithPlayer();
         return;

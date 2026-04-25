@@ -32,10 +32,12 @@ public abstract class Bullet {
         x += vx;
         y += vy;
 
+
         if (x + width < 0 || x > panel.getWidth()
                 || y + height < 0 || y > panel.getHeight()) {
             active = false;
         }
+
     }
 
 

@@ -13,6 +13,7 @@ public class BasicBullet extends AnimatedBullet {
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
+        
         target.takeDamage(damage);
     }
 }

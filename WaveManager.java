@@ -28,8 +28,10 @@ public class WaveManager {
 
     private void unlockMonstersForWave(int wave) {
         switch (wave) {
-            case 1  -> { unlockedMonsters.add(SplitSlime.class);
-                    }
+            case 1  -> { 
+                       unlockedMonsters.add(Ghost.class);
+                        unlockedMonsters.add(Snake.class); }
+                    
             case 3  ->   unlockedMonsters.add(ShadowWalker.class);
             case 4  ->   unlockedMonsters.add(ArmoredTurtle.class);
             case 5  ->   unlockedMonsters.add(FireImp.class);
@@ -43,7 +45,11 @@ public class WaveManager {
     private void unlockBulletsForLevel(int level) {
         switch (level) {
             case 1 -> { unlockedBullets.add(BulletType.BASIC);
-                        unlockedBullets.add(BulletType.FIRE); }
+                       unlockedBullets.add(BulletType.FIRE);
+                          
+                      }
+             
+                    
             case 2 -> { unlockedBullets.add(BulletType.FREEZE);
                         unlockedBullets.add(BulletType.ELECTRIC); }
             case 3 -> { unlockedBullets.add(BulletType.SPIRIT);

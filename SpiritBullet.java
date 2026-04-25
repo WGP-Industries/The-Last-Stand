@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import javax.swing.JPanel;
 
 public class SpiritBullet extends AnimatedBullet {
-    private static final int PUSH_AMOUNT = 160;
+    private static final int PUSH_AMOUNT = 20;
 
     public SpiritBullet(JPanel panel, int xPos, int yPos) {
         super(panel, xPos, yPos, "images/bullets/wind_bullet.png", 4, 2, 80);

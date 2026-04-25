@@ -80,4 +80,11 @@ public abstract class AnimatedBullet extends Bullet {
         g2.drawImage(frame, (int) x, (int) y, width, height, null);
         g2.setTransform(original);
     }
+
+
+
+
+
+
+
 }

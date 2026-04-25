@@ -131,6 +131,8 @@ public class FireImp extends Monster {
 
         initStopX();
 
+        
+
         switch (phase) {
 
             case WALKING_TO_STOP:

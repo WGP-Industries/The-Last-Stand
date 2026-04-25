@@ -100,7 +100,7 @@ public class BerserkerOrc extends Monster {
 
         getWalkAnimation().update();
 
-        if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
+          if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             collideWithPlayer();
@@ -113,20 +113,21 @@ public class BerserkerOrc extends Monster {
             return;
         }
 
-        if (x < -100 || x > panel.getWidth() + 100) respawn();
+        if (x < -2000 || x > panel.getWidth() + 2000) respawn();
     }
 
 
 
 
-    @Override
-    public void respawn() {
-        int panelWidth = panel.getWidth();
-        x      = facingLeft ? panelWidth + 50 : -50;
-        dx     = facingLeft ? -BASE_SPEED : BASE_SPEED;
-        damage = BASE_DAMAGE;
-        soundManager.playClip("appear", false);
-    }
+   @Override
+public void respawn() {
+    int panelWidth = panel.getWidth() == 0 ? 800 : panel.getWidth();
+    
+    // Use dx directly instead of facingLeft — facingLeft can drift
+    x      = (dx < 0) ? panelWidth + 50 : -50;
+    damage = BASE_DAMAGE;
+    soundManager.playClip("appear", false);
+}
 
     @Override
     protected void collideWithPlayer() {

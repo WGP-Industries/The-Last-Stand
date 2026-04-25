@@ -218,6 +218,15 @@ public class GameWindow extends JFrame
                 boolean consumed = false;
                 for (Monster m : activeMonsters) {
 
+                    if (b.getBoundingRectangle().intersects(m.getBoundingRectangle())) {
+    // skip if this bullet type can't affect this monster
+
+                        if (isImmune(m, b)) continue;
+                        b.onHit(m, activeMonsters);
+                        if (!b.isPiercing()) { consumed = true; break; }
+
+                    }
+
                     if (m instanceof SplitSlime ss && ss.hitMiniSlime(b)) {
                         if (!b.isPiercing()) { consumed = true; break; }
                     }
@@ -235,6 +244,20 @@ public class GameWindow extends JFrame
                 }
                 if (consumed) bi.remove();
             }
+
+
+
+            for (Bullet b : new ArrayList<>(bullets)) {
+    if (b instanceof ElectricBullet eb) {
+        Iterator<ChainFX> it = eb.getChainFXList().iterator();
+        while (it.hasNext()) {
+            ChainFX fx = it.next();
+            fx.tick();
+        
+            if (!fx.isActive()) it.remove();
+        }
+    }
+}
 
             // Drain pending mini-slimes from SplitSlimes
             ArrayList<Monster> toAdd = new ArrayList<>();
@@ -301,6 +324,22 @@ public class GameWindow extends JFrame
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Render
 
     public void gameRender() {
@@ -323,6 +362,15 @@ public class GameWindow extends JFrame
             scr.drawImage(offscreen, 0, 0, W, H, null);
             scr.dispose();
         }
+    }
+
+
+    private boolean isImmune(Monster m, Bullet b) {
+        if (b instanceof FireBullet)      return m.isImmuneToFire();
+        if (b instanceof FreezeBullet)    return m.isImmuneToFreeze();
+        if (b instanceof ElectricBullet)  return m.isImmuneToElectricity();
+        if (b instanceof ExplosiveBullet) return m.isImmmuneToExplosion();
+        return false;
     }
 
 
@@ -354,7 +402,7 @@ public class GameWindow extends JFrame
         } catch (Exception e) { return null; }
     }
 
-
+   
 
 
 
@@ -373,39 +421,38 @@ public class GameWindow extends JFrame
         soundManager.stopClip("background");
     }
 
-    private void spawnWave() {
-        if (waveManager.isFinished()) return;
+private void spawnWave() {
+    if (waveManager.isFinished()) return;
 
-        currentSpawnData = waveManager.nextWave();
-        currentWave = currentSpawnData.wave;
-        waveLabel.setText("Wave: " + currentWave + "  |  Level: " + currentSpawnData.level);
+    currentSpawnData = waveManager.nextWave();
+    currentWave = currentSpawnData.wave;
+    waveLabel.setText("Wave: " + currentWave + "  |  Level: " + currentSpawnData.level);
 
-        int leftCount  = 0;
-        int rightCount = 0;
+    // Separate left and right spawners
+    List<Class<? extends Monster>> leftSpawns  = new ArrayList<>();
+    List<Class<? extends Monster>> rightSpawns = new ArrayList<>();
 
-
-        for (Class<? extends Monster> type : currentSpawnData.monsterTypes) {
-            int spawnSide = random.nextInt(2);
-
-            int xPos;
-
-        
-            if (spawnSide == 0) {                                         // left side
-                xPos = -200 - (leftCount * 150) - random.nextInt(50);
-                leftCount++;
-            } else {                                                       // right side
-                xPos = W + 200 + (rightCount * 150) + random.nextInt(50);
-                rightCount++;
-            }
-
-            Monster m = createMonster(type, xPos, 350);
-            m.sharedMonsterList = activeMonsters;
-
-            m.collideWithMonster(activeMonsters);
-
-            activeMonsters.add(m);
-        }
+    for (Class<? extends Monster> type : currentSpawnData.monsterTypes) {
+        if (random.nextBoolean()) leftSpawns.add(type);
+        else                      rightSpawns.add(type);
     }
+
+    // Spawn left-side monsters (moving right), spaced 250px apart off left edge
+    for (int i = 0; i < leftSpawns.size(); i++) {
+        int xPos = -(350 + i * 250 + random.nextInt(80));
+        Monster m = createMonster(leftSpawns.get(i), xPos, 350);
+        m.sharedMonsterList = activeMonsters;
+        activeMonsters.add(m);
+    }
+
+    // Spawn right-side monsters (moving left), spaced 250px apart off right edge
+    for (int i = 0; i < rightSpawns.size(); i++) {
+        int xPos = W + 350 + i * 250 + random.nextInt(80);
+        Monster m = createMonster(rightSpawns.get(i), xPos, 350);
+        m.sharedMonsterList = activeMonsters;
+        activeMonsters.add(m);
+    }
+}
 
     private void checkStompCollisions() {
             if (!player.isFalling()) return;
@@ -461,6 +508,11 @@ public class GameWindow extends JFrame
 
         for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
         for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
+        for (Bullet b : new ArrayList<>(bullets)) {
+    if (b instanceof ElectricBullet eb) {
+        for (ChainFX fx : eb.getChainFXList()) fx.draw(g);
+    }
+}
     }
 
     private void drawHUD(Graphics2D g) {
@@ -554,12 +606,12 @@ public class GameWindow extends JFrame
         g.setColor(new Color(100, 220, 255));
         drawCentred(g, "Bullets unlocked:", 230);
         g.setFont(new Font("Arial", Font.PLAIN, 15));
-        StringBuilder bullets = new StringBuilder();
+        StringBuilder unlockedBullets = new StringBuilder();
         for (BulletType bt : waveManager.getUnlockedBullets()) {
-            if (bullets.length() > 0) bullets.append("  |  ");
-            bullets.append(bt.name());
+            if (unlockedBullets.length() > 0) unlockedBullets.append("  |  ");
+            unlockedBullets.append(bt.name());
         }
-        drawCentred(g, bullets.toString(), 258);
+        drawCentred(g, unlockedBullets.toString(), 258);
 
         // Next level preview
         int nextLevel = completedLevel + 1;
