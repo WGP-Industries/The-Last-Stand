@@ -33,8 +33,8 @@ public class BerserkerOrc extends Monster {
         }
 
         for (int i = 1; i <= 8; i++) {
-            deathLeftAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/berserker_orc_left_dead_" + i + ".png"), 100);
-            deathRightAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/berserker_orc_right_dead_" + i + ".png"), 100);
+            deathLeftAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/left/berserker_orc_left_dead_" + i + ".png"), 100);
+            deathRightAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/right/berserker_orc_right_dead_" + i + ".png"), 100);
         }
 
         walkLeftAnimation.start();

@@ -28,8 +28,8 @@ public class WaveManager {
 
     private void unlockMonstersForWave(int wave) {
         switch (wave) {
-            case 1  -> { unlockedMonsters.add(Ghost.class);
-                         unlockedMonsters.add(Snake.class); }
+            case 1  -> { unlockedMonsters.add(SplitSlime.class);
+                    }
             case 3  ->   unlockedMonsters.add(ShadowWalker.class);
             case 4  ->   unlockedMonsters.add(ArmoredTurtle.class);
             case 5  ->   unlockedMonsters.add(FireImp.class);
@@ -55,10 +55,10 @@ public class WaveManager {
     }
 
     private int getWaveSize() {
-        if (currentWave <= 3)  return random.nextInt(4) + 1;
-        if (currentWave <= 6)  return random.nextInt(4) + 2;
-        if (currentWave <= 9)  return random.nextInt(4) + 3;
-        if (currentWave <= 12) return random.nextInt(4) + 4;
+        if (currentWave <= 3)  return random.nextInt(4,6)+ 1 ;
+        if (currentWave <= 6)  return random.nextInt(4,7) + 2;
+        if (currentWave <= 9)  return random.nextInt(4,8) + 3;
+        if (currentWave <= 12) return random.nextInt(4, 9) + 4;
         return random.nextInt(4) + 5;
     }
 
@@ -75,24 +75,27 @@ public class WaveManager {
 
         int size = getWaveSize();
         List<Class<? extends Monster>> pool = new ArrayList<>(unlockedMonsters);
-
         List<Class<? extends Monster>> selected = new ArrayList<>();
+
         for (int i = 0; i < size; i++) {
-            selected.add(pool.get(random.nextInt(pool.size())));
+            Class<? extends Monster> pick = pool.get(random.nextInt(pool.size()));
+
+            boolean pickedHealer   = pick == Healer.class;
+            boolean noNonHealerYet = selected.stream().noneMatch(c -> c != Healer.class);
+
+            if (pickedHealer && noNonHealerYet) {
+                List<Class<? extends Monster>> nonHealers = pool.stream()
+                    .filter(c -> c != Healer.class)
+                    .toList();
+                if (!nonHealers.isEmpty()) {
+                    selected.add(nonHealers.get(random.nextInt(nonHealers.size())));
+                    continue;
+                }
+            }
+
+            selected.add(pick);
         }
 
         return new SpawnData(currentWave, currentLevel, selected);
     }
-
-    public static class SpawnData {
-        public final int wave;
-        public final int level;
-        public final List<Class<? extends Monster>> monsterTypes;
-
-        public SpawnData(int wave, int level, List<Class<? extends Monster>> monsterTypes) {
-            this.wave         = wave;
-            this.level        = level;
-            this.monsterTypes = monsterTypes;
-        }
     }
-}

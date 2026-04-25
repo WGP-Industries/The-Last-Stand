@@ -54,6 +54,7 @@ public class GameWindow extends JFrame
 
 
     private final WaveManager waveManager = new WaveManager();
+    private SpawnData currentSpawnData;
     private int mouseX = W / 2;
     private int mouseY = H / 2;
 
@@ -174,17 +175,17 @@ public class GameWindow extends JFrame
         }
     }
 
-public void setBulletType(BulletType type) {
-    if (player == null) return;
-    if (!waveManager.getUnlockedBullets().contains(type)) {
-        bulletLabel.setText("Bullet: " + type.name() + " (locked!)  [1-9 to switch]");
-        return;
+    public void setBulletType(BulletType type) {
+        if (player == null) return;
+        if (!waveManager.getUnlockedBullets().contains(type)) {
+            bulletLabel.setText("Bullet: " + type.name() + " (locked!)  [1-9 to switch]");
+            return;
+        }
+        player.setBulletType(type);
+        bulletLabel.setText("Bullet: " + type.name() + "  [1-9 to switch]");
     }
-    player.setBulletType(type);
-    bulletLabel.setText("Bullet: " + type.name() + "  [1-9 to switch]");
-}
 
-    // Update
+        // Update
     public void gameUpdate() {
 
         if (treasure != null && treasure.isDestroyed()) {
@@ -326,32 +327,32 @@ public void setBulletType(BulletType type) {
 
 
 
-private void saveProgress() {
-    try {
-        File file = new File(SAVE_FILE);
+    private void saveProgress() {
+        try {
+            File file = new File(SAVE_FILE);
 
-        // Create parent directories if they don't exist
-        file.getParentFile().mkdirs();
+            // Create parent directories if they don't exist
+            file.getParentFile().mkdirs();
 
-        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            pw.println(currentWave);
-            pw.println(monstersKilled);
-            pw.println(completedLevel);
+            try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+                pw.println(currentWave);
+                pw.println(monstersKilled);
+                pw.println(completedLevel);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace(); 
         }
-
-    } catch (IOException e) {
-        e.printStackTrace(); 
     }
-}
 
-private int[] loadProgress() {
-    try {
-        List<String> lines = Files.readAllLines(Path.of(SAVE_FILE));
-        return new int[]{ Integer.parseInt(lines.get(0).trim()),
-                          Integer.parseInt(lines.get(1).trim()),
-                          Integer.parseInt(lines.get(2).trim()) };
-    } catch (Exception e) { return null; }
-}
+    private int[] loadProgress() {
+        try {
+            List<String> lines = Files.readAllLines(Path.of(SAVE_FILE));
+            return new int[]{ Integer.parseInt(lines.get(0).trim()),
+                            Integer.parseInt(lines.get(1).trim()),
+                            Integer.parseInt(lines.get(2).trim()) };
+        } catch (Exception e) { return null; }
+    }
 
 
 
@@ -373,65 +374,65 @@ private int[] loadProgress() {
     }
 
     private void spawnWave() {
-    if (waveManager.isFinished()) return;
+        if (waveManager.isFinished()) return;
 
-    WaveManager.SpawnData data = waveManager.nextWave();
-    currentWave = data.wave;
-    waveLabel.setText("Wave: " + currentWave + "  |  Level: " + data.level);
+        currentSpawnData = waveManager.nextWave();
+        currentWave = currentSpawnData.wave;
+        waveLabel.setText("Wave: " + currentWave + "  |  Level: " + currentSpawnData.level);
 
-    for (Class<? extends Monster> type : data.monsterTypes) {
-        int spawnSide = random.nextInt(2);
-        int baseX     = (spawnSide == 0) ? -50 : W + 50;
-        int xPos      = (spawnSide == 0)
-                ? baseX - random.nextInt(200)
-                : baseX + random.nextInt(200);
+        int leftCount  = 0;
+        int rightCount = 0;
 
-        Monster m = createMonster(type, xPos, 350);
-        m.sharedMonsterList = activeMonsters;
 
-        boolean clash;
-        int safety = 0;
-        do {
-            clash = false;
-            for (Monster existing : activeMonsters) {
-                if (m.getBoundingRectangle().intersects(existing.getBoundingRectangle())) {
-                    m.x += (spawnSide == 0) ? -50 : 50;
-                    clash = true;
-                }
+        for (Class<? extends Monster> type : currentSpawnData.monsterTypes) {
+            int spawnSide = random.nextInt(2);
+
+            int xPos;
+
+        
+            if (spawnSide == 0) {                                         // left side
+                xPos = -200 - (leftCount * 150) - random.nextInt(50);
+                leftCount++;
+            } else {                                                       // right side
+                xPos = W + 200 + (rightCount * 150) + random.nextInt(50);
+                rightCount++;
             }
-        } while (clash && ++safety < 10);
 
-        activeMonsters.add(m);
-    }
-}
+            Monster m = createMonster(type, xPos, 350);
+            m.sharedMonsterList = activeMonsters;
 
+            m.collideWithMonster(activeMonsters);
 
-private void checkStompCollisions() {
-        if (!player.isFalling()) return;
-
-        java.awt.geom.Rectangle2D.Double playerRect = player.getBoundingRectangle();
-        int playerFeetY = (int)(playerRect.y + playerRect.height);
-
-        for (Monster m : activeMonsters) {
-            if (m.isDead()) continue;
-
-            java.awt.geom.Rectangle2D.Double monsterRect = m.getBoundingRectangle();
-            int monsterTopY = (int) monsterRect.y;
-
-            boolean hOverlap = playerRect.x + playerRect.width > monsterRect.x
-                             && playerRect.x < monsterRect.x + monsterRect.width;
-
-            boolean inStompZone = playerFeetY >= monsterTopY
-                                && playerFeetY <= monsterTopY + 20;
-
-            if (hOverlap && inStompZone) {
-                m.takeDamage(STOMP_DAMAGE);
-                player.bounce();
-                soundManager.playClip("hit", false);
-                break;
-            }
+            activeMonsters.add(m);
         }
     }
+
+    private void checkStompCollisions() {
+            if (!player.isFalling()) return;
+
+            java.awt.geom.Rectangle2D.Double playerRect = player.getBoundingRectangle();
+            int playerFeetY = (int)(playerRect.y + playerRect.height);
+
+            for (Monster m : activeMonsters) {
+                if (m.isDead()) continue;
+
+                java.awt.geom.Rectangle2D.Double monsterRect = m.getBoundingRectangle();
+                int monsterTopY = (int) monsterRect.y;
+
+                boolean hOverlap = playerRect.x + playerRect.width > monsterRect.x
+                                && playerRect.x < monsterRect.x + monsterRect.width;
+
+                boolean inStompZone = playerFeetY >= monsterTopY
+                                    && playerFeetY <= monsterTopY + 20;
+
+                if (hOverlap && inStompZone) {
+                    m.takeDamage(STOMP_DAMAGE);
+                    player.bounce();
+                    soundManager.playClip("hit", false);
+                    break;
+                }
+            }
+        }
 
     // method to create monsters based on class type, used in wave spawning
     private Monster createMonster(Class<? extends Monster> type, int xPos, int yPos) {
@@ -449,18 +450,18 @@ private void checkStompCollisions() {
 
     // Scene Drawing
 
-private void drawGameScene(Graphics2D g) {
-    g.setColor(new Color(135, 206, 235));
-    g.fillRect(0, 0, W, H);
-    g.setColor(new Color(155, 118, 83));
-    g.fillRect(0, 390, W, H - 390);
+    private void drawGameScene(Graphics2D g) {
+        g.setColor(new Color(135, 206, 235));
+        g.fillRect(0, 0, W, H);
+        g.setColor(new Color(155, 118, 83));
+        g.fillRect(0, 390, W, H - 390);
 
-    if (treasure != null) treasure.draw(g);
-    if (player   != null) player.draw(g);
+        if (treasure != null) treasure.draw(g);
+        if (player   != null) player.draw(g);
 
-    for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
-    for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
-}
+        for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
+        for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
+    }
 
     private void drawHUD(Graphics2D g) {
         g.setColor(new Color(0, 0, 0, 170));
@@ -536,39 +537,39 @@ private void drawGameScene(Graphics2D g) {
     }
 
 
-  private void drawLevelCompleteOverlay(Graphics2D g) {
-    g.setColor(new Color(0, 0, 0, 200));
-    g.fillRect(0, 0, W, H);
+    private void drawLevelCompleteOverlay(Graphics2D g) {
+        g.setColor(new Color(0, 0, 0, 200));
+        g.fillRect(0, 0, W, H);
 
-    g.setFont(new Font("Arial", Font.BOLD, 48));
-    g.setColor(new Color(255, 215, 0));
-    drawCentred(g, "LEVEL " + completedLevel + " COMPLETE!", 130);
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        g.setColor(new Color(255, 215, 0));
+        drawCentred(g, "LEVEL " + completedLevel + " COMPLETE!", 130);
 
-    g.setFont(new Font("Arial", Font.PLAIN, 20));
-    g.setColor(Color.WHITE);
-    drawCentred(g, "Waves cleared: " + currentWave + "   |   Score: " + monstersKilled, 185);
+        g.setFont(new Font("Arial", Font.PLAIN, 20));
+        g.setColor(Color.WHITE);
+        drawCentred(g, "Waves cleared: " + currentWave + "   |   Score: " + monstersKilled, 185);
 
-    // Unlocked bullets
-    g.setFont(new Font("Arial", Font.BOLD, 16));
-    g.setColor(new Color(100, 220, 255));
-    drawCentred(g, "Bullets unlocked:", 230);
-    g.setFont(new Font("Arial", Font.PLAIN, 15));
-    StringBuilder bullets = new StringBuilder();
-    for (BulletType bt : waveManager.getUnlockedBullets()) {
-        if (bullets.length() > 0) bullets.append("  |  ");
-        bullets.append(bt.name());
+        // Unlocked bullets
+        g.setFont(new Font("Arial", Font.BOLD, 16));
+        g.setColor(new Color(100, 220, 255));
+        drawCentred(g, "Bullets unlocked:", 230);
+        g.setFont(new Font("Arial", Font.PLAIN, 15));
+        StringBuilder bullets = new StringBuilder();
+        for (BulletType bt : waveManager.getUnlockedBullets()) {
+            if (bullets.length() > 0) bullets.append("  |  ");
+            bullets.append(bt.name());
+        }
+        drawCentred(g, bullets.toString(), 258);
+
+        // Next level preview
+        int nextLevel = completedLevel + 1;
+        g.setFont(new Font("Arial", Font.ITALIC, 15));
+        g.setColor(new Color(180, 180, 180));
+        drawCentred(g, "Next: Level " + nextLevel + "  (Waves " + (currentWave + 1) + "–" + (currentWave + 3) + ")", 300);
+
+        drawBtn(g, BTN_LEVEL_CONTINUE, "Continue",  hLevelContinue, new Color(30,120,30),  new Color(50,190,50));
+        drawBtn(g, BTN_LEVEL_MENU,     "Main Menu", hLevelMenu,     new Color(50,70,135),   new Color(70,105,195));
     }
-    drawCentred(g, bullets.toString(), 258);
-
-    // Next level preview
-    int nextLevel = completedLevel + 1;
-    g.setFont(new Font("Arial", Font.ITALIC, 15));
-    g.setColor(new Color(180, 180, 180));
-    drawCentred(g, "Next: Level " + nextLevel + "  (Waves " + (currentWave + 1) + "–" + (currentWave + 3) + ")", 300);
-
-    drawBtn(g, BTN_LEVEL_CONTINUE, "Continue",  hLevelContinue, new Color(30,120,30),  new Color(50,190,50));
-    drawBtn(g, BTN_LEVEL_MENU,     "Main Menu", hLevelMenu,     new Color(50,70,135),   new Color(70,105,195));
-}
 
 
 

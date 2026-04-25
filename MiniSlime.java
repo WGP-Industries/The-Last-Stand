@@ -108,18 +108,7 @@ public class MiniSlime extends SplitSlime {
         drawHealthBar(g2);
     }
 
-    // @Override
-    // protected void drawStatusEffects(Graphics2D g2) {
-    //     if (phase != Phase.WALKING) return;
-    //     Image raw = getWalkAnimation().getImage();
-    //     if (raw == null) return;
-    //     BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    //     Graphics2D fg = frame.createGraphics();
-    //     fg.drawImage(raw, 0, 0, width, height, null);
-    //     fg.dispose();
-    //     if (isBurning()) burnFX.draw(g2, frame, x, y, width, height);
-    //     if (isFrozen()) freezeFX.draw(g2, frame, x, y, width, height);
-    // }
+
 
     @Override
     public boolean isDead() {

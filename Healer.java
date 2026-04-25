@@ -6,7 +6,7 @@ import javax.swing.JPanel;
 
 public class Healer extends Monster {
 
-    private static final int STOP_DISTANCE = 300;
+    private static final int STOP_DISTANCE = 330;
     private static final int TREASURE_DAMAGE = 200;
     private static final int HEAL_COOLDOWN = 60;
     private static final int HEAL_LINGER_TIME = 20;
@@ -119,6 +119,11 @@ public class Healer extends Monster {
             phase = Phase.ROGUE;
         }
 
+          if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
+        collideWithPlayer();
+        return;
+
+             }
 
         switch (phase) {
 
@@ -231,6 +236,7 @@ public class Healer extends Monster {
     protected void collideWithPlayer() {
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             soundManager.playClip("hit", false);
+            phase = Phase.WALKING;
             respawn();
         }
     }

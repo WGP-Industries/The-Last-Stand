@@ -33,6 +33,7 @@ public abstract class Monster {
 
     protected  final BurnFX burnFX = new BurnFX();
     protected  final FreezeFX freezeFX = new FreezeFX();
+    protected final FlickerDeathFX flickerDeathFX = new FlickerDeathFX();
     
 
     protected boolean facingLeft = false;
@@ -44,7 +45,7 @@ public abstract class Monster {
     private int burnStepCounter = 0;
     private static final int BURN_TICK_INTERVAL = 4;
 
-
+  
 
     private boolean electricuted = false;
     private int electrocuteTicksRemaining = 0;
@@ -87,7 +88,8 @@ public abstract class Monster {
                     readyToRemove = true;
                 }
             } else {
-                readyToRemove = true;
+                flickerDeathFX.tick();
+                if (flickerDeathFX.isFinished()) readyToRemove = true;
             }
             return;
         }
@@ -113,9 +115,9 @@ public abstract class Monster {
             return;
         }
 
-            if (x < -300 || x > panelWidth + 300 || y > panel.getHeight()) {
-            respawn();
-        }
+       if (x < -2000 || x > panelWidth + 2000 || y > panel.getHeight()) {
+                respawn();
+            }
     }
 
     private void updateWalkAnimation() {
@@ -169,48 +171,54 @@ public abstract class Monster {
         }
     }
 
-public void draw(Graphics2D g2) {
-    if (dying) {
-        Animation deathAnim = getDeathAnimation();
-        if (deathAnim != null) {
-            g2.drawImage(deathAnim.getImage(), x, y, width, height, null);
+    public void draw(Graphics2D g2) {
+        if (dying) {
+                    Animation deathAnim = getDeathAnimation();
+                    if (deathAnim != null) {
+                        g2.drawImage(deathAnim.getImage(), x, y, width, height, null);
+                    } else {
+                        BufferedImage base = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D fg = base.createGraphics();
+                        fg.drawImage(getImage(), 0, 0, width, height, null);
+                        fg.dispose();
+
+                        BufferedImage flickered = flickerDeathFX.applyToFrame(base);
+                        if (flickered != null) {
+                            g2.drawImage(flickered, x, y, width, height, null);
+                        }
+                    }
+                    return;
+                }
+
+        // Render monster into an offscreen frame once
+        BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D fg = frame.createGraphics();
+        Animation walkAnim = getWalkAnimation();
+        if (walkAnim != null) {
+            fg.drawImage(walkAnim.getImage(), 0, 0, width, height, null);
         } else {
-            drawStatic(g2);
+            fg.drawImage(getImage(), 0, 0, width, height, null);
         }
-        return;
+        fg.dispose();
+
+        // Apply effects to the frame, chained so both can stack
+        if (isBurning()) frame = burnFX.applyToFrame(frame);
+        if (isFrozen())  frame = freezeFX.applyToFrame(frame);
+
+        // Single draw to screen
+        g2.drawImage(frame, x, y, width, height, null);
+
+        drawHealthBar(g2);
     }
 
-    // Render monster into an offscreen frame once
-    BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D fg = frame.createGraphics();
-    Animation walkAnim = getWalkAnimation();
-    if (walkAnim != null) {
-        fg.drawImage(walkAnim.getImage(), 0, 0, width, height, null);
-    } else {
-        fg.drawImage(getImage(), 0, 0, width, height, null);
+
+
+    protected Image getImage() {
+        return facingLeft ? monsterImageLeft : monsterImageRight;
     }
-    fg.dispose();
-
-    // Apply effects to the frame, chained so both can stack
-    if (isBurning()) frame = burnFX.applyToFrame(frame);
-    if (isFrozen())  frame = freezeFX.applyToFrame(frame);
-
-    // Single draw to screen
-    g2.drawImage(frame, x, y, width, height, null);
-
-    drawHealthBar(g2);
-}
-
-private void drawStatic(Graphics2D g2) {
-    Image img = facingLeft ? monsterImageLeft : monsterImageRight;
-    g2.drawImage(img, x, y, width, height, null);
-}
 
 
 
- protected Image getImage() {
-    return facingLeft ? monsterImageLeft : monsterImageRight;
-}
     protected void drawHealthBar(Graphics2D g2) {
         if (isDead()) return;
         int barWidth = width;
@@ -266,9 +274,6 @@ private void drawStatic(Graphics2D g2) {
         else if (travelDir > 0) x -= amount;
     }
 
-    public void respawnPublic() {
-        respawn();
-    }
 
     public void heal(int amount) {
         if (isDead()) return;
@@ -296,6 +301,8 @@ private void drawStatic(Graphics2D g2) {
         }
         x = (travelDx < 0) ? panelWidth + 50 : -50;
         y = getY();
+
+        collideWithMonster(sharedMonsterList);
         soundManager.playClip("appear", false);
     }
 
@@ -319,16 +326,17 @@ private void drawStatic(Graphics2D g2) {
 
             if (myBox.intersects(otherBox)) {
                 if (this.x < m.x) {
-                    this.x -= 20;
-                    m.x += 20;
+                    this.x -= 30;
+                    m.x += 30;
                 } else {
-                    this.x += 20;
-                    m.x -= 20;
+                    this.x += 30;
+                    m.x -= 30;
                 }
                 myBox = getBoundingRectangle();
             }
         }
     }
+
 
     protected int getSavedDx() { return savedDx; }
 
