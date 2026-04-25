@@ -50,7 +50,7 @@ public class GameWindow extends JFrame
     private JLabel bulletLabel = new JLabel("Bullet: BASIC  [1-9 to switch]");
 
 
-    private static final String SAVE_FILE = "save.dat";
+    private static final String SAVE_FILE = "data/save.dat";
 
 
     private final WaveManager waveManager = new WaveManager();
@@ -327,11 +327,21 @@ public void setBulletType(BulletType type) {
 
 
 private void saveProgress() {
-    try (PrintWriter pw = new PrintWriter(new FileWriter(SAVE_FILE))) {
-        pw.println(currentWave);
-        pw.println(monstersKilled);
-        pw.println(completedLevel);
-    } catch (IOException ignored) {}
+    try {
+        File file = new File(SAVE_FILE);
+
+        // Create parent directories if they don't exist
+        file.getParentFile().mkdirs();
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+            pw.println(currentWave);
+            pw.println(monstersKilled);
+            pw.println(completedLevel);
+        }
+
+    } catch (IOException e) {
+        e.printStackTrace(); 
+    }
 }
 
 private int[] loadProgress() {
@@ -640,15 +650,16 @@ private void drawGameScene(Graphics2D g) {
                 if (save != null) {
                     createGameEntities();
                     // fast-forward WaveManager to the saved wave
-                    for (int i = 0; i < save[0] - 1; i++) waveManager.nextWave();
+                    for (int i = 0; i < save[0]; i++) waveManager.nextWave();
                     currentWave    = save[0];
                     monstersKilled = save[1];
                     completedLevel = save[2];
-                    scoreLabel.setText("Score: " + monstersKilled);
-                    state       = GameState.PLAYING;
-                    gameStarted = true;
-                    soundManager.playClip("background", true);
+                    scoreLabel.setText("Score: " + monstersKilled); 
                     spawnWave();
+                    gameStarted = true;
+                    state       = GameState.PLAYING; 
+                    soundManager.playClip("background", true);
+                  
                 }
             }
             }
@@ -661,7 +672,7 @@ private void drawGameScene(Graphics2D g) {
 
             case LEVEL_COMPLETE -> {
                     if (BTN_LEVEL_CONTINUE.contains(x, y)) {
-                           spawnWave();
+                        spawnWave();
                         gameStarted = true;
                         state = GameState.PLAYING;
                     //    soundManager.playClip("background", true);

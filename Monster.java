@@ -113,7 +113,7 @@ public abstract class Monster {
             return;
         }
 
-        if (x < -100 || x > panelWidth + 100 || y > panel.getHeight()) {
+            if (x < -300 || x > panelWidth + 300 || y > panel.getHeight()) {
             respawn();
         }
     }
@@ -288,7 +288,7 @@ private void drawStatic(Graphics2D g2) {
     }
 
     public void respawn() {
-        int panelWidth = panel.getWidth();
+        int panelWidth = panel.getWidth() == 0 ? 800 : panel.getWidth();
         int travelDx = frozen ? savedDx : dx;
         if (frozen) {
             frozen = false;
