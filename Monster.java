@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Random;
 import javax.swing.JPanel;
 
-
 public abstract class Monster {
 
     protected JPanel panel;
-
     public List<Monster> sharedMonsterList;
 
     protected int x, y, width, height, dx, dy, hp;
@@ -30,12 +28,10 @@ public abstract class Monster {
     protected Animation deathLeftAnimation;
     protected Animation deathRightAnimation;
 
-
-    protected  final BurnFX burnFX = new BurnFX();
-    protected  final FreezeFX freezeFX = new FreezeFX();
+    protected final BurnFX burnFX = new BurnFX();
+    protected final FreezeFX freezeFX = new FreezeFX();
     protected final FlickerDeathFX flickerDeathFX = new FlickerDeathFX();
     public   final ElectricFX electricFX = new ElectricFX();
-
 
     protected boolean facingLeft = false;
     protected boolean dying = false;
@@ -46,16 +42,11 @@ public abstract class Monster {
     private int burnStepCounter = 0;
     private static final int BURN_TICK_INTERVAL = 4;
 
-
     protected int pushVelocity = 0;
-    private static final double PUSH_FRICTION = 0.75; // decay rate per frame
-  
+    private static final double PUSH_FRICTION = 0.75;
 
     private boolean electricuted = false;
     private int electrocuteTicksRemaining = 0;
-
-    
-
 
     private boolean frozen = false;
     private int freezeTicksRemaining = 0;
@@ -105,7 +96,6 @@ public abstract class Monster {
 
         updateWalkAnimation();
 
-        int panelWidth = panel.getWidth();
         if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
@@ -119,14 +109,10 @@ public abstract class Monster {
             return;
         }
 
-       if (x < -2000 || x > panelWidth + 2000 || y > panel.getHeight()) {
-                respawn();
-            }
+        if (x < -2000 || x > WorldConfig.WORLD_W + 2000 || y > panel.getHeight()) {
+            respawn();
+        }
     }
-
-    protected boolean isOnScreen() {
-    return x + width > 0 && x < panel.getWidth();
-}
 
     private void updateWalkAnimation() {
         Animation anim = getWalkAnimation();
@@ -144,16 +130,10 @@ public abstract class Monster {
     public boolean isImmuneToFire() { return false; }
     public boolean isImmuneToElectricity() { return false; }
     public boolean isImmuneToFreeze() { return false; }
-    public boolean isImmmuneToExplosion() { return false; }
-
-
     public boolean isResistantToSprit() { return true; }
     public boolean isResistantToPiercing() { return true; }
-   
 
-    public boolean isReadyToRemove() {
-        return readyToRemove;
-    }
+    public boolean isReadyToRemove() { return readyToRemove; }
 
     protected void applyStatusEffects() {
         if (burning && !isDead()) {
@@ -177,94 +157,65 @@ public abstract class Monster {
         if (electricuted) {
             electrocuteTicksRemaining--;
             electricFX.tick();
-
             if (electrocuteTicksRemaining <= 0) {
                 electricuted = false;
             }
         }
 
-
-
         if (pushVelocity != 0) {
-    x += pushVelocity;
-    pushVelocity = (int)(pushVelocity * PUSH_FRICTION);
-    if (Math.abs(pushVelocity) < 1) {
-        pushVelocity = 0;
-        // Restore walking speed after knockback ends
-        if (!frozen && dx == 0 && savedDx != 0) dx = savedDx;
-    }
-}
-
+            x += pushVelocity;
+            pushVelocity = (int)(pushVelocity * PUSH_FRICTION);
+            if (Math.abs(pushVelocity) < 1) {
+                pushVelocity = 0;
+                if (!frozen && dx == 0 && savedDx != 0) dx = savedDx;
+            }
+        }
     }
 
     public void draw(Graphics2D g2) {
         if (dying) {
-                    Animation deathAnim = getDeathAnimation();
-                    if (deathAnim != null) {
-                        g2.drawImage(deathAnim.getImage(), x, y, width, height, null);
-                    } else {
-                        BufferedImage base = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-                        Graphics2D fg = base.createGraphics();
-                        fg.drawImage(getImage(), 0, 0, width, height, null);
-                        fg.dispose();
+            Animation deathAnim = getDeathAnimation();
+            if (deathAnim != null) {
+                g2.drawImage(deathAnim.getImage(), x, y, width, height, null);
+            } else {
+                BufferedImage base = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D fg = base.createGraphics();
+                fg.drawImage(getImage(), 0, 0, width, height, null);
+                fg.dispose();
+                BufferedImage flickered = flickerDeathFX.applyToFrame(base);
+                if (flickered != null) g2.drawImage(flickered, x, y, width, height, null);
+            }
+            return;
+        }
 
-                        BufferedImage flickered = flickerDeathFX.applyToFrame(base);
-                        if (flickered != null) {
-                            g2.drawImage(flickered, x, y, width, height, null);
-                        }
-                    }
-                    return;
-                }
-
-        // Render monster into an offscreen frame once
         BufferedImage frame = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D fg = frame.createGraphics();
         Animation walkAnim = getWalkAnimation();
-        if (walkAnim != null) {
-            fg.drawImage(walkAnim.getImage(), 0, 0, width, height, null);
-        } else {
-            fg.drawImage(getImage(), 0, 0, width, height, null);
-        }
+        if (walkAnim != null) fg.drawImage(walkAnim.getImage(), 0, 0, width, height, null);
+        else                  fg.drawImage(getImage(),          0, 0, width, height, null);
         fg.dispose();
 
-        // Apply effects to the frame, chained so both can stack
         if (isBurning()) frame = burnFX.applyToFrame(frame);
         if (isFrozen())  frame = freezeFX.applyToFrame(frame);
 
-        // Single draw to screen
         g2.drawImage(frame, x, y, width, height, null);
 
-        if (isElectrocuted())
-         electricFX.draw(g2);
+        if (isElectrocuted()) electricFX.draw(g2);
 
         drawHealthBar(g2);
     }
-
-
 
     protected Image getImage() {
         return facingLeft ? monsterImageLeft : monsterImageRight;
     }
 
-
-
     protected void drawHealthBar(Graphics2D g2) {
         if (isDead()) return;
-        int barWidth = width;
-        int barHeight = 6;
-        int barX = x;
-        int barY = y - 10;
-
+        int barX = x, barY = y - 10, barW = width, barH = 6;
         float pct = (maxHp > 0) ? Math.min(1f, Math.max(0f, (float) hp / maxHp)) : 0f;
-
-        g2.setColor(new Color(180, 30, 30));
-        g2.fillRect(barX, barY, barWidth, barHeight);
-
-        g2.setColor(new Color(40, 180, 40));
-        g2.fillRect(barX, barY, (int)(barWidth * pct), barHeight);
-
-        g2.setColor(new Color(0, 0, 0, 120));
-        g2.drawRect(barX, barY, barWidth, barHeight);
+        g2.setColor(new Color(180, 30, 30));   g2.fillRect(barX, barY, barW, barH);
+        g2.setColor(new Color(40,  180, 40));  g2.fillRect(barX, barY, (int)(barW * pct), barH);
+        g2.setColor(new Color(0, 0, 0, 120));  g2.drawRect(barX, barY, barW, barH);
     }
 
     public void applyBurn(int dmgPerStep, int steps) {
@@ -286,27 +237,18 @@ public abstract class Monster {
         electrocuteTicksRemaining = ticks;
     }
 
+    public boolean isBurning()     { return burning; }
+    public boolean isFrozen()      { return frozen; }
+    public boolean isElectrocuted(){ return electricuted; }
 
-    
-
-
-
-
-
-    public boolean isBurning() { return burning; }
-    public boolean isFrozen() { return frozen; }
-    public boolean isElectrocuted() { return electricuted; }
-
-  public void push(int amount) {
-    int travelDir = frozen ? savedDx : dx;
-    // Push backward relative to travel direction
-    pushVelocity = (travelDir < 0) ? amount : -amount;
-    // Temporarily suppress dx so it doesn't fight the knockback
-    if (!frozen) {
-        savedDx = dx;
-        dx = 0;
+    public void push(int amount) {
+        int travelDir = frozen ? savedDx : dx;
+        pushVelocity = (travelDir < 0) ? amount : -amount;
+        if (!frozen) {
+            savedDx = dx;
+            dx = 0;
+        }
     }
-}
 
     public void heal(int amount) {
         if (isDead()) return;
@@ -328,14 +270,12 @@ public abstract class Monster {
     public void respawn() {
         int panelWidth = panel.getWidth() == 0 ? 800 : panel.getWidth();
         int travelDx = frozen ? savedDx : dx;
-        if (frozen) {
-            frozen = false;
-            dx = savedDx;
-        }
-        x = (travelDx < 0) ? panelWidth + 50 : -50;
+        if (frozen) { frozen = false; dx = savedDx; }
+
+        x = (travelDx < 0) ? WorldConfig.WORLD_W + 50 : -50;
         y = getY();
 
-        collideWithMonster(sharedMonsterList);
+        if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
         soundManager.playClip("appear", false);
     }
 
@@ -348,45 +288,32 @@ public abstract class Monster {
         }
     }
 
-public void collideWithMonster(List<Monster> monsters) {
-    if (!isOnScreen()) return;
-    if (pushVelocity != 0) return;
-
-    Rectangle2D.Double myBox = getBoundingRectangle();
-
-    for (Monster m : monsters) {
-        if (m == this || m.isDead()) continue;
-        if (!this.getClass().equals(m.getClass())) continue;
-        if (m.pushVelocity != 0) continue;
-
-        Rectangle2D.Double otherBox = m.getBoundingRectangle();
-
-        if (myBox.intersects(otherBox)) {
-            if (m.isOnScreen()) {
-              
-                // Use push() for smooth sliding separation
-                push(20);
-            } else {
-                // Other is off-screen, shove it further back so it never
-                // pushes the on-screen monster
-                int otherDir = (m.dx != 0) ? m.dx : m.getSavedDx();
-                if (otherDir > 0) m.x -= width + 10;
-                else              m.x += width + 10;
+    public void collideWithMonster(List<Monster> monsters) {
+        if (monsters == null) return;
+        Rectangle2D.Double myBox = getBoundingRectangle();
+        for (Monster m : monsters) {
+            if (m == this || m.isDead()) continue;
+            if (!this.getClass().equals(m.getClass())) continue;
+            Rectangle2D.Double otherBox = m.getBoundingRectangle();
+            if (myBox.intersects(otherBox)) {
+                if (this.x < m.x) { this.x -= 30; m.x += 30; }
+                else               { this.x += 30; m.x -= 30; }
+                myBox = getBoundingRectangle();
             }
-
-            myBox = getBoundingRectangle();
         }
     }
-}
 
     protected int getSavedDx() { return savedDx; }
 
     protected abstract void collideWithPlayer();
     protected abstract void playDeathSound();
 
-    public boolean isDead() { return hp <= 0; }
-    public int getHealth() { return hp; }
-    public Rectangle2D.Double getBoundingRectangle() { return new Rectangle2D.Double(x, y, width, height); }
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public boolean isDead()      { return hp <= 0; }
+    public int     getHealth()   { return hp; }
+    public int     getX()        { return x; }
+    public int     getY()        { return y; }
+
+    public Rectangle2D.Double getBoundingRectangle() {
+        return new Rectangle2D.Double(x, y, width, height);
+    }
 }

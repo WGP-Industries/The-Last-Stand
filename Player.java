@@ -26,18 +26,19 @@ public class Player {
     private static final float GRAVITY = 0.8f;
     private static final float JUMP_STRENGTH = -14f;
     private static final float MAX_FALL = 18f;
-    private static final int   GROUND_Y = 340;
+
+    private static final int GROUND_Y = WorldConfig.FLOOR_Y - 50;
+
     private boolean isOnGround = false;
 
-
-
     private Color backgroundColour;
-
     private Image playerImage;
     private Image playerLeftImage;
     private Image playerRightImage;
 
     private BulletType currentBulletType = BulletType.BASIC;
+
+    private float damageMultiplier = 1.0f;
 
     public Player(JPanel p, int xPos, int yPos) {
         panel = p;
@@ -45,48 +46,20 @@ public class Player {
         backgroundColour = panel.getBackground();
         x = xPos;
         y = GROUND_Y;
-
-        width  = 50;
+        width = 50;
         height = 50;
-
-        playerLeftImage = ImageManager.loadImage("images/player_left.png");
+        playerLeftImage  = ImageManager.loadImage("images/player_left.png");
         playerRightImage = ImageManager.loadImage("images/player_right.png");
-
-        playerImage = playerRightImage;
+        playerImage      = playerRightImage;
     }
 
-    public boolean isFalling() {
-        return !isOnGround && velocityY > 0;
-    }
-
-    public void bounce() {
-        velocityY  = JUMP_STRENGTH * 0.7f;   // 70% of a full jump so it feels lighter
-        isOnGround = false;
-    }
-
-    public void jump() {
-        if (isOnGround) {
-            velocityY  = JUMP_STRENGTH;
-            isOnGround = false;
-        }
-    }
-
-    public void draw(Graphics2D g2) {
-        g2.drawImage(playerImage, x, y, width, height, null);
-    }
-
-    public void erase() {
-        Graphics g = panel.getGraphics();
-        Graphics2D g2 = (Graphics2D) g;
-
-        g2.setColor(backgroundColour);
-        g2.fill(new Rectangle2D.Double(x, y, width, height));
-
-        g.dispose();
-    }
-
-    public void setMovingLeft(boolean held)  { movingLeft  = held; }
+    public void setMovingLeft (boolean held) { movingLeft  = held; }
     public void setMovingRight(boolean held) { movingRight = held; }
+
+    public void move(int direction) {
+        if (direction == 1) setMovingLeft(true);
+        else if (direction == 2) setMovingRight(true);
+    }
 
     public void updatePhysics() {
         updateHorizontal();
@@ -94,13 +67,11 @@ public class Player {
     }
 
     private void updateHorizontal() {
-        int panelWidth = panel.getWidth();
-
         if (movingLeft && !movingRight) {
             velocityX = Math.max(velocityX - ACCELERATION, -MAX_SPEED_X);
             playerImage = playerLeftImage;
         } else if (movingRight && !movingLeft) {
-            velocityX = Math.min(velocityX + ACCELERATION, MAX_SPEED_X);
+            velocityX = Math.min(velocityX + ACCELERATION,  MAX_SPEED_X);
             playerImage = playerRightImage;
         } else {
             if (velocityX > 0) velocityX = Math.max(velocityX - DECELERATION, 0f);
@@ -108,8 +79,9 @@ public class Player {
         }
 
         x += (int) velocityX;
-        if (x < 0)                    { x = 0;                   velocityX = 0; }
-        if (x > panelWidth - width)   { x = panelWidth - width;  velocityX = 0; }
+
+        if (x < 0) { x = 0; velocityX = 0; }
+        if (x > WorldConfig.WORLD_W - width)    { x = WorldConfig.WORLD_W - width;  velocityX = 0; }
     }
 
     private void updateVertical() {
@@ -125,72 +97,95 @@ public class Player {
         }
     }
 
-    public void move(int direction) {
-        if (direction == 1) setMovingLeft(true);
-        else if (direction == 2) setMovingRight(true);
+    public boolean isFalling() { return !isOnGround && velocityY > 0; }
+
+    public void jump() {
+        if (isOnGround) { velocityY = JUMP_STRENGTH; isOnGround = false; }
     }
 
-        public void push(int amount) {
-        x += (x < panel.getWidth() / 2) ? -amount : amount;
-        x = Math.max(0, Math.min(x, panel.getWidth() - width));
+    public void bounce() {
+        velocityY  = JUMP_STRENGTH * 0.7f;
+        isOnGround = false;
     }
- 
 
-public Bullet shoot(int mouseX, int mouseY) {
+    public void push(int amount) {
+        x += (x < WorldConfig.WORLD_W / 2) ? -amount : amount;
+        x  = Math.max(0, Math.min(x, WorldConfig.WORLD_W - width));
+    }
 
-    boolean shootingLeft = mouseX < x + width / 2;
+    public Bullet shoot(int worldMouseX, int worldMouseY) {
+        boolean shootingLeft = worldMouseX < x + width / 2;
+        int spawnX = shootingLeft ? x - width : x + width;
+        int spawnY = y;
 
-    // Spawn point depends on direction
-    int spawnX = shootingLeft ? x - width : x + width;
-    int spawnY = y;
+        double dirX = worldMouseX - spawnX;
+        double dirY = worldMouseY - spawnY;
+        double len  = Math.hypot(dirX, dirY);
+        if (len == 0) len = 1;
+        dirX /= len;
+        dirY /= len;
 
-    double dirX = mouseX - spawnX;
-    double dirY = mouseY - spawnY;
+        playerImage = shootingLeft ? playerLeftImage : playerRightImage;
 
-    double length = Math.hypot(dirX, dirY);
-    if (length == 0) length = 1;
-    dirX /= length;
-    dirY /= length;
-
-    // Flip sprite
-    playerImage = shootingLeft ? playerLeftImage : playerRightImage;
-
-    Bullet bullet = createBullet(spawnX, spawnY);
-    bullet.setVelocity(dirX * bullet.getSpeed(), dirY * bullet.getSpeed());
-
-    return bullet;
-}
+        Bullet bullet = createBullet(spawnX, spawnY);
+        bullet.damage = Math.max(1, Math.round(bullet.damage * damageMultiplier));
+        bullet.setVelocity(dirX * bullet.getSpeed(), dirY * bullet.getSpeed());
+        return bullet;
+    }
 
     private Bullet createBullet(int bx, int by) {
-        switch (currentBulletType) {
-            case FIRE:      return new FireBullet     (panel, bx, by);
-            case FREEZE:    return new FreezeBullet   (panel, bx, by);
-            case ELECTRIC:  return new ElectricBullet (panel, bx, by);
-            case SPIRIT:    return new SpiritBullet   (panel, bx, by);
-            case RAPID:     return new RapidBullet    (panel, bx, by);
-            case PIERCING:  return new PiercingBullet (panel, bx, by);
-            case EXPLOSIVE: return new ExplosiveBullet(panel, bx, by);
-            case TELEPORT:  return new TeleportBullet (panel, bx, by);
-            default:        return new BasicBullet    (panel, bx, by);
-        }
+        return switch (currentBulletType) {
+            case FIRE      -> new FireBullet     (panel, bx, by);
+            case FREEZE    -> new FreezeBullet   (panel, bx, by);
+            case ELECTRIC  -> new ElectricBullet (panel, bx, by);
+            case SPIRIT    -> new SpiritBullet   (panel, bx, by);
+            case RAPID     -> new RapidBullet    (panel, bx, by);
+            case PIERCING  -> new PiercingBullet (panel, bx, by);
+            case EXPLOSIVE -> new ExplosiveBullet(panel, bx, by);
+            case TELEPORT  -> new TeleportBullet (panel, bx, by);
+            default        -> new BasicBullet    (panel, bx, by);
+        };
     }
 
     public int getCurrentCooldown() {
-        switch (currentBulletType) {
-            case RAPID:     return 80;
-            case EXPLOSIVE: return 1200;
-            case FREEZE:    return 400;
-            case FIRE:      return 350;
-            case PIERCING:  return 400;
-            case ELECTRIC:  return 300;
-            case SPIRIT:    return 300;
-            case TELEPORT:  return 350;
-            default:        return 250;
-        }
+        return switch (currentBulletType) {
+            case RAPID     -> 80;
+            case EXPLOSIVE -> 1200;
+            case FREEZE    -> 400;
+            case FIRE      -> 350;
+            case PIERCING  -> 400;
+            case ELECTRIC  -> 300;
+            case SPIRIT    -> 300;
+            case TELEPORT  -> 350;
+            default        -> 250;
+        };
     }
 
-    public void setBulletType(BulletType type) { currentBulletType = type; }
-    public BulletType getCurrentBulletType()   { return currentBulletType; }
+    public void applyDamageBuff(float mult) {
+        damageMultiplier = Math.min(damageMultiplier * mult, 8.0f);
+    }
+
+    public float getDamageMultiplier() { return damageMultiplier; }
+
+    public void       setBulletType(BulletType type) { currentBulletType = type; }
+    public BulletType getCurrentBulletType()          { return currentBulletType; }
+
+    public void draw(Graphics2D g2) {
+        g2.drawImage(playerImage, x, y, width, height, null);
+    }
+
+    public void erase() {
+        Graphics g = panel.getGraphics();
+        if (g == null) return;
+        ((Graphics2D) g).setColor(backgroundColour);
+        ((Graphics2D) g).fill(new Rectangle2D.Double(x, y, width, height));
+        g.dispose();
+    }
+
+    public int    getX() { return x; }
+    public int    getY() { return y; }
+    public int    getWidth() { return width; }
+    public int    getHeight() { return height; }
 
     public Rectangle2D.Double getBoundingRectangle() {
         return new Rectangle2D.Double(x, y, width, height);

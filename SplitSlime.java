@@ -82,9 +82,7 @@ public class SplitSlime extends Monster {
         }
     }
 
-
-   public boolean isSplitPrevented() { return splitPrevented; }
-
+    public boolean isSplitPrevented() { return splitPrevented; }
 
     @Override
     public void move() {
@@ -100,7 +98,6 @@ public class SplitSlime extends Monster {
                 if (!isFrozen()) getWalkAnimation().update();
 
                 if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
-
 
                 if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
                     collideWithPlayer();
@@ -179,27 +176,26 @@ public class SplitSlime extends Monster {
 
     public void preventSplit() { splitPrevented = true; }
 
-
     public boolean hitMiniSlime(Bullet bullet) {
-    if (!bullet.isActive()) return false;
+        if (!bullet.isActive()) return false;
 
-    for (MiniSlime mini : miniSlimes) {
-        if (!mini.isDead() &&
-            bullet.getBoundingRectangle().intersects(mini.getBoundingRectangle())) {
-
-            bullet.onHit(mini, new ArrayList<>());
-            return true;
+        for (MiniSlime mini : miniSlimes) {
+            if (!mini.isDead() &&
+                bullet.getBoundingRectangle().intersects(mini.getBoundingRectangle())) {
+                bullet.onHit(mini, new ArrayList<>());
+                return true;
+            }
         }
+        return false;
     }
-    return false;
-}
-@Override
-protected Animation getWalkAnimation() {
-    if (isFrozen()) {
-        return (getSavedDx() < 0) ? walkLeftAnimation : walkRightAnimation;
+
+    @Override
+    protected Animation getWalkAnimation() {
+        if (isFrozen()) {
+            return (getSavedDx() < 0) ? walkLeftAnimation : walkRightAnimation;
+        }
+        return facingLeft ? walkLeftAnimation : walkRightAnimation;
     }
-    return facingLeft ? walkLeftAnimation : walkRightAnimation;
-}
 
     @Override
     public void draw(Graphics2D g2) {

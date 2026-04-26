@@ -5,11 +5,8 @@ public class BerserkerOrc extends Monster {
     private static final int BASE_SPEED  = 3;
     private static final int BASE_DAMAGE = 30;
    
-
     private static final int RAGE_SPEED  = 7;
     private static final int RAGE_DAMAGE = 60;
-
-
 
     public BerserkerOrc(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, BASE_DAMAGE);
@@ -41,10 +38,9 @@ public class BerserkerOrc extends Monster {
         walkRightAnimation.start();
     }
 
-
-   private boolean isRaging() {
-    return isBurning() || (float) hp / maxHp <= 0.4f;
-}
+    private boolean isRaging() {
+        return isBurning() || (float) hp / maxHp <= 0.4f;
+    }
 
     private void updateRageStats() {
         if (isFrozen()) return;
@@ -100,7 +96,7 @@ public class BerserkerOrc extends Monster {
 
         getWalkAnimation().update();
 
-          if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
+        if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             collideWithPlayer();
@@ -113,21 +109,17 @@ public class BerserkerOrc extends Monster {
             return;
         }
 
-        if (x < -2000 || x > panel.getWidth() + 2000) respawn();
+        if (x < -2000 || x > WorldConfig.WORLD_W + 2000) respawn();
     }
 
-
-
-
-   @Override
-public void respawn() {
-    int panelWidth = panel.getWidth() == 0 ? 800 : panel.getWidth();
-    
-    // Use dx directly instead of facingLeft — facingLeft can drift
-    x      = (dx < 0) ? panelWidth + 50 : -50;
-    damage = BASE_DAMAGE;
-    soundManager.playClip("appear", false);
-}
+    @Override
+    public void respawn() {
+        int panelWidth = panel.getWidth();
+        x      = facingLeft ? panelWidth + 50 : -50;
+        dx     = facingLeft ? -BASE_SPEED : BASE_SPEED;
+        damage = BASE_DAMAGE;
+        soundManager.playClip("appear", false);
+    }
 
     @Override
     protected void collideWithPlayer() {

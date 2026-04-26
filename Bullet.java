@@ -21,31 +21,24 @@ public abstract class Bullet {
         this.height = 5;
     }
 
-
     public abstract void draw(Graphics2D g2);
-
     public abstract void onHit(Monster target, ArrayList<Monster> allMonsters);
-
     public abstract double getSpeed();
 
     public void move() {
         x += vx;
         y += vy;
 
-
-        if (x + width < 0 || x > panel.getWidth()
-                || y + height < 0 || y > panel.getHeight()) {
+        if (x + width < 0
+                || x > WorldConfig.WORLD_W
+                || y + height < 0
+                || y > panel.getHeight()) {
             active = false;
         }
-
     }
 
-
     public boolean bypassesShield() { return false; }
-
-    // Piercing and Explosive bullets override this to true.
     public boolean isPiercing() { return false; }
-
     public int getCooldown() { return 250; }
 
     public void setVelocity(double vx, double vy) {
@@ -55,7 +48,7 @@ public abstract class Bullet {
 
     public boolean isActive()  { return active; }
     public void deactivate()   { active = false; }
-    public int  getDamage()    { return damage; }
+    public int getDamage() { return damage; }
 
     public Rectangle2D.Double getBoundingRectangle() {
         return new Rectangle2D.Double(x, y, width, height);

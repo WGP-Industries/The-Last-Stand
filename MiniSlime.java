@@ -53,6 +53,8 @@ public class MiniSlime extends SplitSlime {
                 if (dx != 0) facingLeft = (dx < 0);
                 if (!isFrozen()) getWalkAnimation().update();
 
+                if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
+
                 if (treasure != null && !treasure.isDestroyed() &&
                         getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
                     collideWithTreasure();
@@ -94,7 +96,6 @@ public class MiniSlime extends SplitSlime {
         switch (phase) {
             case WALKING:
                 g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
-               
                 break;
             case DYING:
                 g2.drawImage(getDeathAnimation().getImage(), x, y, width, height, null);
@@ -104,18 +105,13 @@ public class MiniSlime extends SplitSlime {
             default:
                 break;
         }
-
         drawHealthBar(g2);
     }
-
-
 
     @Override
     public boolean isDead() {
         return phase == Phase.DEAD;
     }
-
-
 
     @Override
     public void playDeathSound() {

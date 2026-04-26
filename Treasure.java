@@ -48,6 +48,11 @@ public class Treasure {
         }
     }
 
+    public void heal(int amount) {
+        if (destroyed) return;
+        hp = Math.min(hp + amount, maxHp);
+    }
+
     public boolean isDestroyed() { return destroyed; }
     public int getHp()           { return hp; }
     public int getMaxHp()        { return maxHp; }

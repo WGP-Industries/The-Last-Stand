@@ -3,8 +3,6 @@ import javax.swing.JPanel;
 
 public class ArmoredTurtle extends Monster {
 
-
-
     public ArmoredTurtle(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, 40);
 
@@ -37,7 +35,6 @@ public class ArmoredTurtle extends Monster {
         super.move();
     }
 
-
     @Override
     public void takeDamage(int damage) {
         hp -= damage / 2;
@@ -47,12 +44,10 @@ public class ArmoredTurtle extends Monster {
     @Override
     public boolean isResistantToPiercing() { return false; }
 
-    
-
     @Override
-protected Image getImage() {
-    return getCurrentAnimation().getImage();
-}
+    protected Image getImage() {
+        return getCurrentAnimation().getImage();
+    }
 
     @Override
     public void playDeathSound() {
