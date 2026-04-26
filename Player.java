@@ -17,7 +17,7 @@ public class Player {
     private float velocityX = 0f;
     private boolean movingLeft = false;
     private boolean movingRight = false;
-    private static final float MAX_SPEED_X = 8f;
+    private static final float MAX_SPEED_X = 14f;
     private static final float ACCELERATION = 1.5f;
     private static final float DECELERATION = 2.0f;
 

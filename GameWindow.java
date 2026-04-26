@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.*;
@@ -8,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import javax.swing.*;
-import java.awt.geom.Rectangle2D;
 
 public class GameWindow extends JFrame
         implements Runnable, KeyListener, MouseListener, MouseMotionListener {
@@ -18,6 +18,11 @@ public class GameWindow extends JFrame
 
     private static final int W = WorldConfig.VIEW_W;
     private static final int H = WorldConfig.VIEW_H;
+
+
+    private BackgroundManager surfaceBgManager;
+    private BackgroundManager undergroundBgManager;
+    private int lastCamX = 0;   // tracks previous camX to derive movement delta
 
     private JPanel gameArea;
 
@@ -147,6 +152,10 @@ public class GameWindow extends JFrame
         healthPackRespawnTimer = 0;
         camX           = worldCx - W / 2;
 
+        surfaceBgManager     = new BackgroundManager(this, 1);
+        undergroundBgManager = new BackgroundManager(this, 1);
+        lastCamX = (int) camX;
+
         scoreLabel.setText("Score: 0");
         waveLabel.setText("Wave: 0");
 
@@ -220,6 +229,16 @@ public class GameWindow extends JFrame
         if (player == null) return;
         double target = player.getX() + player.getWidth() / 2.0 - W / 2.0;
         camX = Math.max(0, Math.min(target, WorldConfig.WORLD_W - W));
+
+
+        int newCamX = (int) camX;
+        int delta = newCamX - lastCamX;
+        if (delta > 0) {
+            for (int i = 0; i < delta ; i++) surfaceBgManager.moveRight();
+        } else if (delta < 0) {
+            for (int i = 0; i < -delta; i++) surfaceBgManager.moveLeft();
+        }
+        lastCamX = newCamX;
     }
 
     public void gameUpdate() {
@@ -385,8 +404,9 @@ public class GameWindow extends JFrame
     }
 
     public void gameRender() {
-        Graphics2D g = (Graphics2D) offscreen.getGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+         Graphics2D g = (Graphics2D) offscreen.getGraphics();
+    g.setTransform(new java.awt.geom.AffineTransform()); // reset every frame
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         switch (state) {
             case MENU     -> drawMenu(g);
@@ -418,12 +438,20 @@ public class GameWindow extends JFrame
         if (scr != null) { scr.drawImage(offscreen, 0, 0, W, H, null); scr.dispose(); }
     }
 
-    private void drawWorldScene(Graphics2D g) {
+   private void drawWorldScene(Graphics2D g) {
+    if (underground) {
+        // Underground keeps procedural drawing, no parallax yet
         applyCamera(g);
-        if (underground) drawUndergroundContent(g);
-        else             drawSurfaceContent(g);
+        drawUndergroundContent(g);
+        restoreCamera(g);
+    } else {
+        // Draw parallax in screen space BEFORE camera offset
+        surfaceBgManager.draw(g);
+        applyCamera(g);
+        drawSurfaceContent(g);
         restoreCamera(g);
     }
+}
 
     private void applyCamera(Graphics2D g) {
         g.translate(-(int) camX, 0);
@@ -434,29 +462,25 @@ public class GameWindow extends JFrame
     }
 
     private void drawSurfaceContent(Graphics2D g) {
-        g.setColor(new Color(135, 206, 235));
-        g.fillRect(0, 0, WorldConfig.WORLD_W, H);
+        // tile grass&road and tree_face across world in world space
+        Image grassRoad = ImageManager.loadImage("images/surface/grass&road.png");
+        Image treeFace  = ImageManager.loadImage("images/surface/tree_face.png");
 
-        g.setColor(new Color(255, 255, 255, 90));
-        for (int cx = 80; cx < WorldConfig.WORLD_W; cx += 320) {
-            g.fillOval(cx, 50, 160, 55);
-            g.fillOval(cx + 50, 35, 120, 50);
+        int imgW = WorldConfig.VIEW_H * 1920 / 1080; // same width Background uses
+        int imgH = WorldConfig.VIEW_H;
+
+        for (int tx = 0; tx < WorldConfig.WORLD_W; tx += imgW) {
+            g.drawImage(grassRoad, tx, 0, imgW, imgH, null);
+            g.drawImage(treeFace,  tx, 0, imgW, imgH, null);
         }
 
-        g.setColor(new Color(155, 118, 83));
-        g.fillRect(0, WorldConfig.FLOOR_Y, WorldConfig.WORLD_W, H - WorldConfig.FLOOR_Y);
-
-        g.setColor(new Color(180, 140, 100));
-        g.fillRect(0, WorldConfig.FLOOR_Y, WorldConfig.WORLD_W, 5);
-
-        if (treasure != null)      treasure.draw(g);
-        if (player   != null)      player.draw(g);
+        if (treasure != null)  treasure.draw(g);
+        if (player != null)    player.draw(g);
         for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
         for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
         for (Bullet b : new ArrayList<>(bullets)) {
-            if (b instanceof ElectricBullet eb) {
+            if (b instanceof ElectricBullet eb)
                 for (ChainFX fx : eb.getChainFXList()) fx.draw(g);
-            }
         }
     }
 
@@ -581,7 +605,7 @@ public class GameWindow extends JFrame
 
         if (player != null && player.getDamageMultiplier() > 1.01f) {
             g.setColor(new Color(255, 100, 100));
-            g.drawString("DMG ×" + String.format("%.2f", player.getDamageMultiplier()), 470, 19);
+            g.drawString("DMG x" + String.format("%.2f", player.getDamageMultiplier()), 470, 19);
         }
 
         g.setColor(Color.WHITE);
@@ -809,8 +833,8 @@ public class GameWindow extends JFrame
                 if      (state == GameState.PLAYING) state = GameState.PAUSED;
                 else if (state == GameState.PAUSED)  state = GameState.PLAYING;
             }
-            case KeyEvent.VK_LEFT  -> { if (player != null) player.setMovingLeft(true);  }
-            case KeyEvent.VK_RIGHT -> { if (player != null) player.setMovingRight(true); }
+            case KeyEvent.VK_A -> { if (player != null) player.setMovingLeft(true);  }
+            case KeyEvent.VK_D -> { if (player != null) player.setMovingRight(true); }
             case KeyEvent.VK_SPACE -> { if (player != null && gameStarted) player.jump(); }
             case KeyEvent.VK_SHIFT -> {
                 if (state == GameState.PLAYING && gameStarted && transitionTicks == 0) {
@@ -832,8 +856,8 @@ public class GameWindow extends JFrame
     @Override
     public void keyReleased(KeyEvent e) {
         if (player == null) return;
-        if (e.getKeyCode() == KeyEvent.VK_LEFT)  player.setMovingLeft(false);
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) player.setMovingRight(false);
+        if (e.getKeyCode() == KeyEvent.VK_A) player.setMovingLeft(false);
+        if (e.getKeyCode() == KeyEvent.VK_D) player.setMovingRight(false);
     }
 
     @Override public void keyTyped(KeyEvent e) {}
