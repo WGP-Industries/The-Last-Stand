@@ -20,10 +20,11 @@ public class GameWindow extends JFrame
     private static final int H = WorldConfig.VIEW_H;
 
 
+
     private BackgroundManager surfaceBgManager;
     private BackgroundManager undergroundBgManager;
     private int lastCamX = 0;   // tracks previous camX to derive movement delta
-
+    private int lastPlayerY = 0;
     private JPanel gameArea;
 
     private BufferedImage offscreen;
@@ -34,6 +35,7 @@ public class GameWindow extends JFrame
     private final Random random = new Random();
 
     private double camX = 0;
+    private double camY = 0;
 
     private static final int STOMP_DAMAGE = 40;
 
@@ -225,21 +227,25 @@ public class GameWindow extends JFrame
         bulletLabel.setText("Bullet: " + type.name() + "  [1-9]");
     }
 
-    private void updateCamera() {
-        if (player == null) return;
-        double target = player.getX() + player.getWidth() / 2.0 - W / 2.0;
-        camX = Math.max(0, Math.min(target, WorldConfig.WORLD_W - W));
+private void updateCamera() {
+    if (player == null) return;
+    double targetX = player.getX() + player.getWidth() / 2.0 - W / 2.0;
+    camX = Math.max(0, Math.min(targetX, WorldConfig.WORLD_W - W));
 
-
-        int newCamX = (int) camX;
-        int delta = newCamX - lastCamX;
-        if (delta > 0) {
-            for (int i = 0; i < delta ; i++) surfaceBgManager.moveRight();
-        } else if (delta < 0) {
-            for (int i = 0; i < -delta; i++) surfaceBgManager.moveLeft();
-        }
-        lastCamX = newCamX;
+    int newCamX = (int) camX;
+    int delta = newCamX - lastCamX;
+    if (delta > 0) {
+        for (int i = 0; i < delta; i++) surfaceBgManager.moveRight();
+    } else if (delta < 0) {
+        for (int i = 0; i < -delta; i++) surfaceBgManager.moveLeft();
     }
+    lastCamX = newCamX;
+
+    float[] yAmounts = {0.05f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f};
+    if (player.getY() < lastPlayerY) surfaceBgManager.moveUp(yAmounts);
+    else if (player.getY() > lastPlayerY) surfaceBgManager.moveDown(yAmounts);
+    lastPlayerY = player.getY();
+}
 
     public void gameUpdate() {
         if (treasure != null && treasure.isDestroyed()) {

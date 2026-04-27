@@ -9,7 +9,7 @@ public class SpiritBullet extends AnimatedBullet {
         damage = 5;
     }
 
-    @Override public double getSpeed()    { return 13; }
+    @Override public double getSpeed()    { return 40; }
     @Override public int    getCooldown() { return 300; }
 
     @Override

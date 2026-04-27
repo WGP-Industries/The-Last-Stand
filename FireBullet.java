@@ -10,7 +10,7 @@ public class FireBullet extends AnimatedBullet {
         damage = 10;
     }
 
-    @Override public double getSpeed()    { return 9; }
+    @Override public double getSpeed()    { return 30; }
     @Override public int    getCooldown() { return 350; }
 
    @Override

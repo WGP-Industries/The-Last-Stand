@@ -9,7 +9,7 @@ public class FreezeBullet extends AnimatedBullet {
         damage = 10;
     }
 
-    @Override public double getSpeed()    { return 11; }
+    @Override public double getSpeed()    { return 30; }
     @Override public int    getCooldown() { return 400; }
 
 

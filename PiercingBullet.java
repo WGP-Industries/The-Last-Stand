@@ -17,7 +17,7 @@ public class PiercingBullet extends AnimatedBullet {
         
     }
 
-    @Override public double  getSpeed()    { return 14; }
+    @Override public double  getSpeed()    { return 35; }
     @Override public int     getCooldown() { return 400; }
     @Override public boolean isPiercing()  { return true; }
 

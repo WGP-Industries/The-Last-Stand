@@ -7,7 +7,7 @@ public class RapidBullet extends AnimatedBullet {
         damage = 12;
     }
 
-    @Override public double getSpeed()    { return 20; }
+    @Override public double getSpeed()    { return 70; }
     @Override public int    getCooldown() { return 80; }
 
     @Override

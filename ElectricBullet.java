@@ -17,7 +17,7 @@ public class ElectricBullet extends AnimatedBullet {
         damage = 20;
     }
 
-    @Override public double getSpeed()    { return 12; }
+    @Override public double getSpeed()    { return 100; }
     @Override public int    getCooldown() { return 300; }
 
     public List<ChainFX> getChainFXList() { return chainFXList; }

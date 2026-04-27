@@ -8,7 +8,7 @@ public class BasicBullet extends AnimatedBullet {
         damage = 25;
     }
 
-    @Override public double getSpeed()   { return 10; }
+    @Override public double getSpeed()   { return 30; }
     @Override public int    getCooldown() { return 250; }
 
     @Override

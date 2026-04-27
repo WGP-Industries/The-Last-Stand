@@ -16,7 +16,7 @@ public class ExplosiveBullet extends AnimatedBullet {
         damage = 50;
     }
 
-    @Override public double  getSpeed()    { return 7; }
+    @Override public double  getSpeed()    { return 30; }
     @Override public int     getCooldown() { return 1200; }
     @Override public boolean isPiercing()  { return true; }
 

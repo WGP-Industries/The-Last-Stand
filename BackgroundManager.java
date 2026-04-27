@@ -18,7 +18,7 @@ public class BackgroundManager {
             "images/surface/fireflies.png",
             "images/surface/grasses.png",
         },
-        new int[]{1, 1, 1, 2, 2, 2}
+        new int[]{1, 2, 2, 3,3 , 3}
     );
 }
 
@@ -40,6 +40,16 @@ public class BackgroundManager {
         for (int i = 0; i < numBackgrounds; i++)
             backgrounds[i].moveLeft();
     }
+
+
+    public void moveUp(float[] amounts) {
+    for (int i = 0; i < numBackgrounds; i++)
+        backgrounds[i].moveUp(amounts[i]);
+}
+public void moveDown(float[] amounts) {
+    for (int i = 0; i < numBackgrounds; i++)
+        backgrounds[i].moveDown(amounts[i]);
+}
 
     public void draw(Graphics2D g2) {
         for (int i = 0; i < numBackgrounds; i++)

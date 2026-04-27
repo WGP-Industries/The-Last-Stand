@@ -7,7 +7,7 @@ public class TeleportBullet extends AnimatedBullet {
         damage = 0;
     }
 
-    @Override public double getSpeed()    { return 15; }
+    @Override public double getSpeed()    { return 30; }
     @Override public int    getCooldown() { return 350; }
 
     @Override

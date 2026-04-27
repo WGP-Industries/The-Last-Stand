@@ -14,6 +14,8 @@ public class Background {
     private int backgroundX;
     private int backgroundX2;
     private int bgDX;
+    private float bgOffsetY = 0;
+    private float bgDY;
 
 public Background(JFrame window, String imageFile, int bgDX) {
     this.bgImage = loadImage(imageFile);
@@ -58,9 +60,15 @@ public void moveLeft() {
     }
 }
     public void draw(Graphics2D g2) {
-        g2.drawImage(bgImage, backgroundX,         0, drawW, drawH, null);
-        g2.drawImage(bgImage, backgroundX2,        0, drawW, drawH, null);
-    }
+    g2.drawImage(bgImage, (int)backgroundX,  (int)bgOffsetY, drawW, drawH, null);
+    g2.drawImage(bgImage, (int)backgroundX2, (int)bgOffsetY, drawW, drawH, null);
+}
+    
+    public void moveUp(float amount)   { bgOffsetY -= amount; }
+    public void moveDown(float amount) { bgOffsetY += amount; }
+
+
+
 
     public Image loadImage(String fileName) {
         return new ImageIcon(fileName).getImage();
