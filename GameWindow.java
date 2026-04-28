@@ -57,7 +57,12 @@ public class GameWindow extends JFrame
     private static final String SAVE_FILE = "data/save.dat";
 
     private final WaveManager waveManager    = new WaveManager();
+    private SolidObjectManager solidObjectManager;
     private SpawnData         currentSpawnData;
+
+    // Sky-drop system (level 3+)
+    private int skyDropTimer = 0;
+    private static final int SKY_DROP_BASE_INTERVAL = 100; 
     private int mouseX = W / 2;
     private int mouseY = H / 2;
 
@@ -139,8 +144,11 @@ public class GameWindow extends JFrame
     public void createGameEntities() {
         int worldCx = WorldConfig.WORLD_W / 2;
 
-        player         = new Player(gameArea, worldCx, 0);
-        treasure       = new Treasure(worldCx, WorldConfig.FLOOR_Y - 45);
+        solidObjectManager = new SolidObjectManager();   // starts at level 1 (no platforms)
+
+        player   = new Player(gameArea, worldCx, 0);
+        player.setSolidObjectManager(solidObjectManager); // player can land on platforms
+        treasure = new Treasure(worldCx, WorldConfig.FLOOR_Y - 45);
         activeMonsters = new ArrayList<>();
         bullets        = new ArrayList<>();
         waveManager.reset();
@@ -149,6 +157,7 @@ public class GameWindow extends JFrame
         currentWave    = 0;
         lastShotTime   = 0;
         coins          = 0;
+        skyDropTimer   = 0;
         underground    = false;
         transitionTicks = 0;
         healthPackRespawnTimer = 0;
@@ -378,6 +387,25 @@ private void updateCamera() {
 
             scoreLabel.setText("Score: " + monstersKilled);
 
+            // periodically drop an extra monster from above the visible screen.
+            if (!underground
+                    && currentSpawnData != null
+                    && currentSpawnData.level >= 3
+                    && !activeMonsters.isEmpty()) {
+
+                skyDropTimer++;
+
+                int interval = Math.max(60,
+                        SKY_DROP_BASE_INTERVAL - (currentSpawnData.level - 3) * 10);
+
+                if (skyDropTimer >= interval) {
+                    skyDropTimer = 0;
+                    dropMonsterFromSky();
+                }
+            } else {
+                skyDropTimer = 0;
+            }
+
             if (waveManager.isFinished() && activeMonsters.isEmpty()) {
                 waveLabel.setText("You win at wave " + currentWave + "!");
                 scoreLabel.setText("Final Score: " + monstersKilled);
@@ -480,8 +508,9 @@ private void updateCamera() {
             g.drawImage(treeFace,  tx, 0, imgW, imgH, null);
         }
 
-        if (treasure != null)  treasure.draw(g);
-        if (player != null)    player.draw(g);
+        if (treasure != null)           treasure.draw(g);
+        if (solidObjectManager != null) solidObjectManager.draw(g); // elevated platforms
+        if (player != null)             player.draw(g);
         for (Monster m : new ArrayList<>(activeMonsters)) m.draw(g);
         for (Bullet  b : new ArrayList<>(bullets))        b.draw(g);
         for (Bullet b : new ArrayList<>(bullets)) {
@@ -782,19 +811,50 @@ private void updateCamera() {
         currentWave      = currentSpawnData.wave;
         waveLabel.setText("Wave: " + currentWave + "  |  Level: " + currentSpawnData.level);
 
+        // Refresh platform layout for the current level
+        solidObjectManager.loadLevel(currentSpawnData.level);
+
+        List<int[]> platSpawns = solidObjectManager.getPlatformSpawnPoints();
+        int platIdx   = 0;
         int leftCount = 0, rightCount = 0;
+
+        int treasureCX = (int) treasure.getBoundingRectangle().getCenterX();
+
         for (Class<? extends Monster> type : currentSpawnData.monsterTypes) {
-            int side = random.nextInt(2);
-            int xPos;
-            if (side == 0) {
-                xPos = -200 - (leftCount * 150) - random.nextInt(50);
-                leftCount++;
+            int xPos, yPos;
+            boolean onPlatform = false;
+
+            if (platIdx < platSpawns.size()) {
+                int[] plat = platSpawns.get(platIdx++);
+                xPos       = plat[0];
+                yPos       = plat[1] - 80;
+                onPlatform = true;
             } else {
-                xPos = WorldConfig.WORLD_W + 200 + (rightCount * 150) + random.nextInt(50);
-                rightCount++;
+                // Standard off-screen side spawn
+                if (random.nextInt(2) == 0) {
+                    xPos = -200 - (leftCount  * 150) - random.nextInt(50);
+                    leftCount++;
+                } else {
+                    xPos = WorldConfig.WORLD_W + 200 + (rightCount * 150) + random.nextInt(50);
+                    rightCount++;
+                }
+                yPos = WorldConfig.FLOOR_Y - 40;
             }
-            Monster m = createMonster(type, xPos, WorldConfig.FLOOR_Y - 40);
+
+            Monster m = createMonster(type, xPos, yPos);
             m.sharedMonsterList = activeMonsters;
+
+            // Flying monsters (Ghost) keep their own gravity-free logic
+            if (!(m instanceof Ghost)) {
+                m.setSolidObjectManager(solidObjectManager);
+            }
+
+            // Platform-spawned monsters must walk toward the treasure
+            if (onPlatform) {
+                int speed = Math.max(1, Math.abs(m.getDx()));
+                m.setDx(xPos < treasureCX ? speed : -speed);
+            }
+
             m.collideWithMonster(activeMonsters);
             activeMonsters.add(m);
         }
@@ -817,6 +877,35 @@ private void updateCamera() {
                 break;
             }
         }
+    }
+
+    private void dropMonsterFromSky() {
+        List<Class<? extends Monster>> pool = waveManager.getUnlockedMonsters();
+        if (pool.isEmpty()) return;
+
+        // Filter out Ghost — a falling ghost makes no sense
+        List<Class<? extends Monster>> groundPool = pool.stream()
+                .filter(c -> c != Ghost.class)
+                .toList();
+        if (groundPool.isEmpty()) return;
+
+        Class<? extends Monster> type = groundPool.get(random.nextInt(groundPool.size()));
+
+        // Spawn somewhere within the current camera view (world coords)
+        int margin = 80;
+        int spawnX = (int)(camX + margin + random.nextInt(Math.max(1, W - margin * 2)));
+        int spawnY = -120;   // well above the screen
+
+        Monster m = createMonster(type, spawnX, spawnY);
+        m.sharedMonsterList = activeMonsters;
+        m.setSolidObjectManager(solidObjectManager);   // gravity pulls it down
+
+        // Walk toward the treasure once it lands
+        int treasureCX = (int) treasure.getBoundingRectangle().getCenterX();
+        int speed      = Math.max(1, Math.abs(m.getDx()));
+        m.setDx(spawnX < treasureCX ? speed : -speed);
+
+        activeMonsters.add(m);
     }
 
     private Monster createMonster(Class<? extends Monster> type, int xPos, int yPos) {

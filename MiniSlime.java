@@ -53,6 +53,9 @@ public class MiniSlime extends SplitSlime {
                 if (dx != 0) facingLeft = (dx < 0);
                 if (!isFrozen()) getWalkAnimation().update();
 
+                // Gravity
+                applyGravityAndPlatforms();
+
                 if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
                 if (treasure != null && !treasure.isDestroyed() &&

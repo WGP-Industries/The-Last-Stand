@@ -142,6 +142,9 @@ public class Healer extends Monster {
                 x += dx;
                 facingLeft = (dx < 0);
                 getWalkAnimation().update();
+
+                // Gravity 
+                applyGravityAndPlatforms();
                 break;
 
             case CHARGING_STRONG:
@@ -186,10 +189,13 @@ public class Healer extends Monster {
                 break;
 
             case ROGUE:
-    x += dx;
-    getWalkAnimation().update();
+                x += dx;
+                getWalkAnimation().update();
 
-    if (treasure != null &&
+                // Gravity
+                applyGravityAndPlatforms();
+
+                if (treasure != null &&
         getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
         treasure.takeDamage(TREASURE_DAMAGE);
         hp = 0;

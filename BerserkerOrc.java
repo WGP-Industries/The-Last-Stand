@@ -25,12 +25,11 @@ public class BerserkerOrc extends Monster {
         deathRightAnimation = new Animation(false);
 
         for (int i = 1; i <= 3; i++) {
-            walkLeftAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/berserker_orc_left_walk_" + i + ".png"), 100);
+            walkLeftAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/berserker_orc_left_walk_"  + i + ".png"), 100);
             walkRightAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/berserker_orc_right_walk_" + i + ".png"), 100);
         }
-
         for (int i = 1; i <= 8; i++) {
-            deathLeftAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/left/berserker_orc_left_dead_" + i + ".png"), 100);
+            deathLeftAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/left/berserker_orc_left_dead_"   + i + ".png"), 100);
             deathRightAnimation.addFrame(ImageManager.loadImage("images/berserker_orc/dead/right/berserker_orc_right_dead_" + i + ".png"), 100);
         }
 
@@ -45,13 +44,8 @@ public class BerserkerOrc extends Monster {
     private void updateRageStats() {
         if (isFrozen()) return;
         int dir = facingLeft ? -1 : 1;
-        if (isRaging()) {
-            dx     = dir * RAGE_SPEED;
-            damage = RAGE_DAMAGE;
-        } else {
-            dx     = dir * BASE_SPEED;
-            damage = BASE_DAMAGE;
-        }
+        if (isRaging()) { dx = dir * RAGE_SPEED; damage = RAGE_DAMAGE; }
+        else            { dx = dir * BASE_SPEED;  damage = BASE_DAMAGE; }
     }
 
     @Override
@@ -64,7 +58,7 @@ public class BerserkerOrc extends Monster {
         if (dying) return;
         hp -= amount;
         if (hp <= 0) {
-            hp = 0;
+            hp    = 0;
             dying = true;
             facingLeft = (dx <= 0);
             deathLeftAnimation.start();
@@ -94,6 +88,9 @@ public class BerserkerOrc extends Monster {
         x += dx;
         if (dx != 0) facingLeft = (dx < 0);
 
+        // Gravity
+        applyGravityAndPlatforms();
+
         getWalkAnimation().update();
 
         if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
@@ -114,8 +111,7 @@ public class BerserkerOrc extends Monster {
 
     @Override
     public void respawn() {
-        int panelWidth = panel.getWidth();
-        x      = facingLeft ? panelWidth + 50 : -50;
+        x      = facingLeft ? panel.getWidth() + 50 : -50;
         dx     = facingLeft ? -BASE_SPEED : BASE_SPEED;
         damage = BASE_DAMAGE;
         soundManager.playClip("appear", false);
@@ -130,7 +126,5 @@ public class BerserkerOrc extends Monster {
     }
 
     @Override
-    public void playDeathSound() {
-        soundManager.playClip("die", false);
-    }
+    public void playDeathSound() { soundManager.playClip("die", false); }
 }

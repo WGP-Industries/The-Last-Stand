@@ -15,17 +15,17 @@ public class Player {
 
     // Horizontal movement
     private float velocityX = 0f;
-    private boolean movingLeft = false;
+    private boolean movingLeft  = false;
     private boolean movingRight = false;
-    private static final float MAX_SPEED_X = 14f;
-    private static final float ACCELERATION = 1.5f;
-    private static final float DECELERATION = 2.0f;
+    private static final float MAX_SPEED_X   = 14f;
+    private static final float ACCELERATION  = 1.5f;
+    private static final float DECELERATION  = 2.0f;
 
     // Vertical / jump physics
-    private float velocityY = 0f;
-    private static final float GRAVITY = 0.8f;
+    private float velocityY    = 0f;
+    private static final float GRAVITY      = 0.8f;
     private static final float JUMP_STRENGTH = -14f;
-    private static final float MAX_FALL = 18f;
+    private static final float MAX_FALL      = 18f;
 
     private static final int GROUND_Y = WorldConfig.FLOOR_Y - 50;
 
@@ -37,20 +37,25 @@ public class Player {
     private Image playerRightImage;
 
     private BulletType currentBulletType = BulletType.BASIC;
-
     private float damageMultiplier = 1.0f;
+
+    // Player can land on platform, aswell as shoot through them
+    private SolidObjectManager solidObjectManager = null;
 
     public Player(JPanel p, int xPos, int yPos) {
         panel = p;
-
         backgroundColour = panel.getBackground();
-        x = xPos;
-        y = GROUND_Y;
-        width = 50;
+        x      = xPos;
+        y      = GROUND_Y;
+        width  = 50;
         height = 50;
         playerLeftImage  = ImageManager.loadImage("images/player_left.png");
         playerRightImage = ImageManager.loadImage("images/player_right.png");
         playerImage      = playerRightImage;
+    }
+
+    public void setSolidObjectManager(SolidObjectManager mgr) {
+        solidObjectManager = mgr;
     }
 
     public void setMovingLeft (boolean held) { movingLeft  = held; }
@@ -74,7 +79,7 @@ public class Player {
             velocityX = Math.min(velocityX + ACCELERATION,  MAX_SPEED_X);
             playerImage = playerRightImage;
         } else {
-            if (velocityX > 0) velocityX = Math.max(velocityX - DECELERATION, 0f);
+            if      (velocityX > 0) velocityX = Math.max(velocityX - DECELERATION, 0f);
             else if (velocityX < 0) velocityX = Math.min(velocityX + DECELERATION, 0f);
         }
 
@@ -89,10 +94,24 @@ public class Player {
             velocityY += GRAVITY;
             if (velocityY > MAX_FALL) velocityY = MAX_FALL;
             y += (int) velocityY;
-            if (y >= GROUND_Y) {
-                y          = GROUND_Y;
+
+            // Find the effective floor (platform surface or the world floor)
+            int groundY = (solidObjectManager != null)
+                    ? solidObjectManager.getLandingY(x, width, y, height)
+                    : GROUND_Y;
+
+            if (y >= groundY) {
+                y          = groundY;
                 velocityY  = 0f;
                 isOnGround = true;
+            }
+        } else {
+            // Stay grounded — if the platform walked off from under us, start falling.
+            int groundY = (solidObjectManager != null)
+                    ? solidObjectManager.getLandingY(x, width, y, height)
+                    : GROUND_Y;
+            if (y < groundY) {
+                isOnGround = false;   // walked off platform edge
             }
         }
     }
@@ -182,10 +201,10 @@ public class Player {
         g.dispose();
     }
 
-    public int    getX() { return x; }
-    public int    getY() { return y; }
-    public int    getWidth() { return width; }
-    public int    getHeight() { return height; }
+    public int getX()      { return x; }
+    public int getY()      { return y; }
+    public int getWidth()  { return width; }
+    public int getHeight() { return height; }
 
     public Rectangle2D.Double getBoundingRectangle() {
         return new Rectangle2D.Double(x, y, width, height);

@@ -52,15 +52,45 @@ public abstract class Monster {
     private int freezeTicksRemaining = 0;
     private int savedDx = 0;
 
+    protected SolidObjectManager solidObjectManager = null;
+
+    private static final float GRAVITY = 0.60f;
+    private static final float MAX_FALL_SPEED = 16f;
+    private float gravityVelY = 0f;
+
     public Monster(JPanel p, int xPos, int yPos, Player ply, Treasure trs, int dmg) {
-        panel = p;
-        x = xPos;
-        y = yPos;
-        damage = dmg;
-        player = ply;
-        treasure = trs;
+        panel      = p;
+        x          = xPos;
+        y          = yPos;
+        damage     = dmg;
+        player     = ply;
+        treasure   = trs;
         soundManager = SoundManager.getInstance();
-        random = new Random();
+        random     = new Random();
+    }
+
+    // Gravity
+
+    protected boolean usesGravity() {
+        return solidObjectManager != null;
+    }
+
+    protected void applyGravityAndPlatforms() {
+        if (!usesGravity() || dying) return;
+
+        gravityVelY = Math.min(gravityVelY + GRAVITY, MAX_FALL_SPEED);
+        int newY    = y + (int) gravityVelY;
+
+        int landingY = (solidObjectManager != null)
+                ? solidObjectManager.getLandingY(x, width, y, height)
+                : WorldConfig.FLOOR_Y - height;
+
+        if (newY >= landingY) {
+            y           = landingY;
+            gravityVelY = 0f;
+        } else {
+            y = newY;
+        }
     }
 
     public void move() {
@@ -70,7 +100,7 @@ public abstract class Monster {
 
         if (isDead() && !dying) {
             dying = true;
-            if (deathLeftAnimation != null) deathLeftAnimation.start();
+            if (deathLeftAnimation  != null) deathLeftAnimation.start();
             if (deathRightAnimation != null) deathRightAnimation.start();
             playDeathSound();
         }
@@ -79,9 +109,7 @@ public abstract class Monster {
             Animation anim = getDeathAnimation();
             if (anim != null) {
                 anim.update();
-                if (!anim.isStillActive()) {
-                    readyToRemove = true;
-                }
+                if (!anim.isStillActive()) readyToRemove = true;
             } else {
                 flickerDeathFX.tick();
                 if (flickerDeathFX.isFinished()) readyToRemove = true;
@@ -91,6 +119,9 @@ public abstract class Monster {
 
         x += dx;
         y += dy;
+
+        // Gravity
+        applyGravityAndPlatforms();
 
         if (dx != 0) facingLeft = dx < 0;
 
@@ -157,9 +188,7 @@ public abstract class Monster {
         if (electricuted) {
             electrocuteTicksRemaining--;
             electricFX.tick();
-            if (electrocuteTicksRemaining <= 0) {
-                electricuted = false;
-            }
+            if (electrocuteTicksRemaining <= 0) electricuted = false;
         }
 
         if (pushVelocity != 0) {
@@ -213,16 +242,16 @@ public abstract class Monster {
         if (isDead()) return;
         int barX = x, barY = y - 10, barW = width, barH = 6;
         float pct = (maxHp > 0) ? Math.min(1f, Math.max(0f, (float) hp / maxHp)) : 0f;
-        g2.setColor(new Color(180, 30, 30));   g2.fillRect(barX, barY, barW, barH);
-        g2.setColor(new Color(40,  180, 40));  g2.fillRect(barX, barY, (int)(barW * pct), barH);
-        g2.setColor(new Color(0, 0, 0, 120));  g2.drawRect(barX, barY, barW, barH);
+        g2.setColor(new Color(180, 30, 30));  g2.fillRect(barX, barY, barW, barH);
+        g2.setColor(new Color(40, 180, 40));  g2.fillRect(barX, barY, (int)(barW * pct), barH);
+        g2.setColor(new Color(0, 0, 0, 120)); g2.drawRect(barX, barY, barW, barH);
     }
 
     public void applyBurn(int dmgPerStep, int steps) {
         burning = true;
-        burnDamagePerStep = dmgPerStep;
+        burnDamagePerStep  = dmgPerStep;
         burnStepsRemaining = steps;
-        burnStepCounter = 0;
+        burnStepCounter    = 0;
     }
 
     public void applyFreeze(int ticks) {
@@ -237,17 +266,14 @@ public abstract class Monster {
         electrocuteTicksRemaining = ticks;
     }
 
-    public boolean isBurning()     { return burning; }
-    public boolean isFrozen()      { return frozen; }
-    public boolean isElectrocuted(){ return electricuted; }
+    public boolean isBurning()      { return burning;      }
+    public boolean isFrozen()       { return frozen;       }
+    public boolean isElectrocuted() { return electricuted; }
 
     public void push(int amount) {
         int travelDir = frozen ? savedDx : dx;
         pushVelocity = (travelDir < 0) ? amount : -amount;
-        if (!frozen) {
-            savedDx = dx;
-            dx = 0;
-        }
+        if (!frozen) { savedDx = dx; dx = 0; }
     }
 
     public void heal(int amount) {
@@ -259,22 +285,19 @@ public abstract class Monster {
         if (isDead()) return;
         hp -= amount;
         if (hp <= 0) {
-            hp = 0;
+            hp    = 0;
             dying = true;
-            if (deathLeftAnimation != null) deathLeftAnimation.start();
+            if (deathLeftAnimation  != null) deathLeftAnimation.start();
             if (deathRightAnimation != null) deathRightAnimation.start();
             playDeathSound();
         }
     }
 
     public void respawn() {
-        int panelWidth = panel.getWidth() == 0 ? 800 : panel.getWidth();
         int travelDx = frozen ? savedDx : dx;
         if (frozen) { frozen = false; dx = savedDx; }
-
         x = (travelDx < 0) ? WorldConfig.WORLD_W + 50 : -50;
         y = getY();
-
         if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
         soundManager.playClip("appear", false);
     }
@@ -305,13 +328,20 @@ public abstract class Monster {
 
     protected int getSavedDx() { return savedDx; }
 
+    public int  getDx()       { return dx; }
+    public void setDx(int v)  { dx = v; }
+
+    public void setSolidObjectManager(SolidObjectManager mgr) {
+        solidObjectManager = mgr;
+    }
+
     protected abstract void collideWithPlayer();
     protected abstract void playDeathSound();
 
-    public boolean isDead()      { return hp <= 0; }
-    public int     getHealth()   { return hp; }
-    public int     getX()        { return x; }
-    public int     getY()        { return y; }
+    public boolean isDead()    { return hp <= 0; }
+    public int getHealth()     { return hp; }
+    public int getX()          { return x; }
+    public int getY()          { return y; }
 
     public Rectangle2D.Double getBoundingRectangle() {
         return new Rectangle2D.Double(x, y, width, height);

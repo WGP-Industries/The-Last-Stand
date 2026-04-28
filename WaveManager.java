@@ -17,7 +17,8 @@ public class WaveManager {
     public int getCurrentLevel() { return currentLevel; }
     public boolean isFinished()  { return currentWave >= TOTAL_WAVES; }
 
-    public List<BulletType> getUnlockedBullets() { return unlockedBullets; }
+    public List<BulletType>               getUnlockedBullets()  { return unlockedBullets;  }
+    public List<Class<? extends Monster>> getUnlockedMonsters() { return unlockedMonsters; }
 
     public void reset() {
         currentWave = 0;

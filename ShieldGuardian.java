@@ -68,16 +68,20 @@ public class ShieldGuardian extends Monster {
         initStopX();
 
         if (!reachedStop) {
-    x += dx;
-    facingLeft = (dx < 0);
-    getWalkAnimation().update();
+            x += dx;
+            facingLeft = (dx < 0);
+            getWalkAnimation().update();
 
-    if ((dx > 0 && x >= stopX) || (dx < 0 && x <= stopX)) {
-        x           = stopX;
-        dx          = 0;
-        reachedStop = true;
-    }
-}
+            if ((dx > 0 && x >= stopX) || (dx < 0 && x <= stopX)) {
+                x           = stopX;
+                dx          = 0;
+                reachedStop = true;
+            }
+        }
+
+        // Gravity
+        applyGravityAndPlatforms();
+
         shield.update(x, y, width, facingLeft);
 
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {

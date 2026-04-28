@@ -97,6 +97,9 @@ public class SplitSlime extends Monster {
                 if (dx != 0) facingLeft = (dx < 0);
                 if (!isFrozen()) getWalkAnimation().update();
 
+                // Gravity
+                applyGravityAndPlatforms();
+
                 if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
                 if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
