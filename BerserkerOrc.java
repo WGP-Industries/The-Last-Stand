@@ -90,7 +90,7 @@ public class BerserkerOrc extends Monster {
 
         // Gravity
         applyGravityAndPlatforms();
-
+        tickAI();
         getWalkAnimation().update();
 
         if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);

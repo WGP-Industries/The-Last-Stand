@@ -6,7 +6,10 @@ import javax.swing.JPanel;
 
 public class SplitSlime extends Monster {
 
-    protected enum Phase { WALKING, DYING, SPLITTING, DEAD }
+    protected enum Phase {
+        WALKING, DYING, SPLITTING, DEAD
+    }
+
     protected Phase phase;
 
     private Animation splitAnimation;
@@ -18,8 +21,7 @@ public class SplitSlime extends Monster {
     private final BurnFX burnFX = new BurnFX();
     private final FreezeFX freezeFX = new FreezeFX();
 
-    private static final Rectangle2D.Double OFFSCREEN_RECT =
-            new Rectangle2D.Double(-9999, -9999, 1, 1);
+    private static final Rectangle2D.Double OFFSCREEN_RECT = new Rectangle2D.Double(-9999, -9999, 1, 1);
 
     public SplitSlime(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
         super(p, xPos, yPos, player, treasure, 20);
@@ -43,13 +45,17 @@ public class SplitSlime extends Monster {
         splitAnimation = new Animation(false);
 
         for (int i = 1; i <= 8; i++) {
-            walkLeftAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_left_walk_" + i + ".png"), 100);
-            walkRightAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_right_walk_" + i + ".png"), 100);
+            walkLeftAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_left_walk_" + i + ".png"),
+                    100);
+            walkRightAnimation
+                    .addFrame(ImageManager.loadImage("images/split_slime/split_slime_right_walk_" + i + ".png"), 100);
         }
 
         for (int i = 1; i <= 7; i++) {
-            deathLeftAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_death_" + i + ".png"), 100);
-            deathRightAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_death_" + i + ".png"), 100);
+            deathLeftAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_death_" + i + ".png"),
+                    100);
+            deathRightAnimation.addFrame(ImageManager.loadImage("images/split_slime/split_slime_death_" + i + ".png"),
+                    100);
         }
 
         for (int i = 1; i <= 2; i++) {
@@ -70,23 +76,29 @@ public class SplitSlime extends Monster {
 
     @Override
     public void takeDamage(int damage) {
-        if (phase != Phase.WALKING) return;
+        if (phase != Phase.WALKING)
+            return;
         hp -= damage;
         if (hp <= 0) {
             hp = 0;
             phase = Phase.DYING;
             dying = true;
-            if (deathLeftAnimation != null) deathLeftAnimation.start();
-            if (deathRightAnimation != null) deathRightAnimation.start();
+            if (deathLeftAnimation != null)
+                deathLeftAnimation.start();
+            if (deathRightAnimation != null)
+                deathRightAnimation.start();
             playDeathSound();
         }
     }
 
-    public boolean isSplitPrevented() { return splitPrevented; }
+    public boolean isSplitPrevented() {
+        return splitPrevented;
+    }
 
     @Override
     public void move() {
-        if (!panel.isVisible()) return;
+        if (!panel.isVisible())
+            return;
 
         applyStatusEffects();
 
@@ -94,13 +106,17 @@ public class SplitSlime extends Monster {
 
             case WALKING:
                 x += dx;
-                if (dx != 0) facingLeft = (dx < 0);
-                if (!isFrozen()) getWalkAnimation().update();
+                if (dx != 0)
+                    facingLeft = (dx < 0);
+                if (!isFrozen())
+                    getWalkAnimation().update();
 
                 // Gravity
                 applyGravityAndPlatforms();
+                tickAI();
 
-                if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
+                if (sharedMonsterList != null)
+                    collideWithMonster(sharedMonsterList);
 
                 if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
                     collideWithPlayer();
@@ -113,7 +129,9 @@ public class SplitSlime extends Monster {
                     return;
                 }
 
-                if (x < -100 || x > panel.getWidth() + 100) respawn();
+                if (x < -100 || x > WorldConfig.WORLD_W + 100)
+                    respawn();
+
                 break;
 
             case DYING:
@@ -158,33 +176,48 @@ public class SplitSlime extends Monster {
         int spawnDir = (dx < 0) ? -1 : 1;
         int spawnY = y + (height - MINI_HEIGHT);
 
-        miniSlimes.add(new MiniSlime(panel, x - spawnDir * SPACING, spawnY, player, treasure, dx));
-        miniSlimes.add(new MiniSlime(panel, x, spawnY, player, treasure, dx));
-        miniSlimes.add(new MiniSlime(panel, x + spawnDir * SPACING, spawnY, player, treasure, dx));
+        MiniSlime m1 = new MiniSlime(panel, x - spawnDir * SPACING, spawnY, player, treasure, dx);
+        MiniSlime m2 = new MiniSlime(panel, x, spawnY, player, treasure, dx);
+        MiniSlime m3 = new MiniSlime(panel, x + spawnDir * SPACING, spawnY, player, treasure, dx);
+
+        // Pass solid object manager so gravity works
+        m1.setSolidObjectManager(solidObjectManager);
+        m2.setSolidObjectManager(solidObjectManager);
+        m3.setSolidObjectManager(solidObjectManager);
+
+        miniSlimes.add(m1);
+        miniSlimes.add(m2);
+        miniSlimes.add(m3);
     }
 
     public ArrayList<MiniSlime> drainPendingMinis() {
-        if (minisReleased || miniSlimes.isEmpty()) return new ArrayList<>();
+        if (minisReleased || miniSlimes.isEmpty())
+            return new ArrayList<>();
         minisReleased = true;
         return new ArrayList<>(miniSlimes);
     }
 
     public boolean isFullyDead() {
-        if (splitPrevented) return phase == Phase.DEAD;
+        if (splitPrevented)
+            return phase == Phase.DEAD;
         for (MiniSlime mini : miniSlimes) {
-            if (!mini.isDead()) return false;
+            if (!mini.isDead())
+                return false;
         }
         return !miniSlimes.isEmpty();
     }
 
-    public void preventSplit() { splitPrevented = true; }
+    public void preventSplit() {
+        splitPrevented = true;
+    }
 
     public boolean hitMiniSlime(Bullet bullet) {
-        if (!bullet.isActive()) return false;
+        if (!bullet.isActive())
+            return false;
 
         for (MiniSlime mini : miniSlimes) {
             if (!mini.isDead() &&
-                bullet.getBoundingRectangle().intersects(mini.getBoundingRectangle())) {
+                    bullet.getBoundingRectangle().intersects(mini.getBoundingRectangle())) {
                 bullet.onHit(mini, new ArrayList<>());
                 return true;
             }
@@ -209,13 +242,18 @@ public class SplitSlime extends Monster {
                 fg.drawImage(getWalkAnimation().getImage(), 0, 0, width, height, null);
                 fg.dispose();
 
-                if (isBurning()) frame = burnFX.applyToFrame(frame);
-                if (isFrozen())  frame = freezeFX.applyToFrame(frame);
+                if (isBurning())
+                    frame = burnFX.applyToFrame(frame);
+                if (isFrozen())
+                    frame = freezeFX.applyToFrame(frame);
+                if (electricFX.isActive())
+                    electricFX.draw(g2);
 
                 g2.drawImage(frame, x, y, width, height, null);
                 drawHealthBar(g2);
                 break;
             case DYING:
+
                 g2.drawImage(getDeathAnimation().getImage(), x, y, width, height, null);
                 break;
             case SPLITTING:

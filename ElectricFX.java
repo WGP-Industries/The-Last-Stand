@@ -7,7 +7,7 @@ public class ElectricFX {
     private final Animation shockedAnim;
     private boolean active = false;
     private int x, y, width, height;
-
+ 
     public ElectricFX() {
         Image strip = ImageManager.loadImage("images/bullets/fx/shocked.png");
         int frameCount = 8;
@@ -33,10 +33,28 @@ public class ElectricFX {
         active = true;
     }
 
+
+
+
+    
+
     public void tick() {
-        if (active) shockedAnim.update();
-        if (shockedAnim.isStillActive() == false) active = false;
-    }
+    if (!active) return;
+    shockedAnim.update();
+    if (!shockedAnim.isStillActive()) active = false;
+}
+
+
+public void updatePosition(int monsterX, int monsterY, int monsterW, int monsterH) {
+    this.x      = monsterX;
+    this.y      = monsterY - 10;
+    this.width  = monsterW;
+    this.height = monsterH;
+}
+
+
+
+
 
     public boolean isActive() { return active; }
 

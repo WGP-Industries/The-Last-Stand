@@ -7,65 +7,118 @@ public class WaveManager {
     private static final int TOTAL_WAVES = 15;
 
     private int currentWave = 0;
-    private int currentLevel = 0;
+    private int currentLevel = 1;
     private final Random random = new Random();
 
     private final List<Class<? extends Monster>> unlockedMonsters = new ArrayList<>();
     private final List<BulletType> unlockedBullets = new ArrayList<>();
 
-    public int getCurrentWave()  { return currentWave; }
-    public int getCurrentLevel() { return currentLevel; }
-    public boolean isFinished()  { return currentWave >= TOTAL_WAVES; }
+    public WaveManager() {
+        reset();
+    }
 
-    public List<BulletType>               getUnlockedBullets()  { return unlockedBullets;  }
-    public List<Class<? extends Monster>> getUnlockedMonsters() { return unlockedMonsters; }
+    public int getCurrentWave() {
+        return currentWave;
+    }
+
+    public int getCurrentLevel() {
+        return currentLevel;
+    }
+
+    public boolean isFinished() {
+        return currentWave >= TOTAL_WAVES;
+    }
+
+    public List<BulletType> getUnlockedBullets() {
+        return unlockedBullets;
+    }
+
+    public List<Class<? extends Monster>> getUnlockedMonsters() {
+        return unlockedMonsters;
+    }
 
     public void reset() {
         currentWave = 0;
-        currentLevel = 0;
+        currentLevel = 1;
         unlockedMonsters.clear();
         unlockedBullets.clear();
+        // unlockAllBullets();
     }
 
     private void unlockMonstersForWave(int wave) {
         switch (wave) {
-            case 1  -> { 
-                       unlockedMonsters.add(Ghost.class);
-                        unlockedMonsters.add(Snake.class); }
-                    
-            case 3  ->   unlockedMonsters.add(ShadowWalker.class);
-            case 4  ->   unlockedMonsters.add(ArmoredTurtle.class);
-            case 5  ->   unlockedMonsters.add(FireImp.class);
-            case 6  ->   unlockedMonsters.add(SplitSlime.class);
-            case 8  ->   unlockedMonsters.add(Healer.class);
-            case 12 ->   unlockedMonsters.add(ShieldGuardian.class);
-            case 15 ->   unlockedMonsters.add(BerserkerOrc.class);
+            case 1 -> {
+                unlockedMonsters.add(Snake.class);
+
+                unlockedMonsters.add(Ghost.class);
+            }
+
+            case 3 -> unlockedMonsters.add(ShadowWalker.class);
+            case 4 -> unlockedMonsters.add(ArmoredTurtle.class);
+            case 5 -> unlockedMonsters.add(Healer.class);
+            case 6 -> unlockedMonsters.add(SplitSlime.class);
+            case 8 -> unlockedMonsters.add(Healer.class);
+            case 12 -> unlockedMonsters.add(ShieldGuardian.class);
+            case 15 -> unlockedMonsters.add(BerserkerOrc.class);
         }
+    }
+
+    private void unlockAllBullets() {
+        for (BulletType type : BulletType.values()) {
+            if (!unlockedBullets.contains(type)) {
+                unlockedBullets.add(type);
+            }
+        }
+
+    }
+
+    public void skipToWave(int targetWave) {
+        currentWave = 0;
+        currentLevel = 1;
+        unlockedMonsters.clear();
+        unlockedBullets.clear();
+        unlockAllBullets();
+        // Unlock all monsters up to target
+        for (int w = 1; w <= targetWave; w++) {
+            unlockMonstersForWave(w);
+        }
+        currentWave = targetWave;
+        currentLevel = (int) Math.ceil((double) currentWave / 3);
     }
 
     private void unlockBulletsForLevel(int level) {
         switch (level) {
-            case 1 -> { unlockedBullets.add(BulletType.BASIC);
-                       unlockedBullets.add(BulletType.FIRE);
-                          
-                      }
-             
-                    
-            case 2 -> { unlockedBullets.add(BulletType.FREEZE);
-                        unlockedBullets.add(BulletType.ELECTRIC); }
-            case 3 -> { unlockedBullets.add(BulletType.SPIRIT);
-                        unlockedBullets.add(BulletType.EXPLOSIVE); }
-            case 4 -> { unlockedBullets.add(BulletType.PIERCING);
-                        unlockedBullets.add(BulletType.RAPID); }
-            case 5 ->   unlockedBullets.add(BulletType.TELEPORT);
+            case 1 -> {
+                unlockedBullets.add(BulletType.BASIC);
+                unlockedBullets.add(BulletType.FIRE);
+                unlockedBullets.add(BulletType.RAPID);
+            }
+
+            case 2 -> {
+                unlockedBullets.add(BulletType.FREEZE);
+                unlockedBullets.add(BulletType.ELECTRIC);
+            }
+            case 3 -> {
+                unlockedBullets.add(BulletType.SPIRIT);
+                unlockedBullets.add(BulletType.EXPLOSIVE);
+            }
+            case 4 -> {
+                unlockedBullets.add(BulletType.PIERCING);
+                unlockedBullets.add(BulletType.RAPID);
+            }
+            case 5 -> unlockedBullets.add(BulletType.TELEPORT);
         }
     }
 
     private int getWaveSize() {
-        if (currentWave <= 3)  return random.nextInt(4,6)+ 1 ;
-        if (currentWave <= 6)  return random.nextInt(4,7) + 2;
-        if (currentWave <= 9)  return random.nextInt(4,8) + 3;
-        if (currentWave <= 12) return random.nextInt(4, 9) + 4;
+        if (currentWave <= 3)
+            return random.nextInt(4, 6) + 1;
+        if (currentWave <= 6)
+            return random.nextInt(4, 7) + 2;
+        if (currentWave <= 9)
+            return random.nextInt(4, 8) + 3;
+        if (currentWave <= 12)
+            return random.nextInt(4, 9) + 4;
         return random.nextInt(4) + 5;
     }
 
@@ -87,13 +140,13 @@ public class WaveManager {
         for (int i = 0; i < size; i++) {
             Class<? extends Monster> pick = pool.get(random.nextInt(pool.size()));
 
-            boolean pickedHealer   = pick == Healer.class;
+            boolean pickedHealer = pick == Healer.class;
             boolean noNonHealerYet = selected.stream().noneMatch(c -> c != Healer.class);
 
             if (pickedHealer && noNonHealerYet) {
                 List<Class<? extends Monster>> nonHealers = pool.stream()
-                    .filter(c -> c != Healer.class)
-                    .toList();
+                        .filter(c -> c != Healer.class)
+                        .toList();
                 if (!nonHealers.isEmpty()) {
                     selected.add(nonHealers.get(random.nextInt(nonHealers.size())));
                     continue;
@@ -105,4 +158,4 @@ public class WaveManager {
 
         return new SpawnData(currentWave, currentLevel, selected);
     }
-    }
+}

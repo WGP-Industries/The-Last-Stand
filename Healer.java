@@ -107,11 +107,18 @@ public class Healer extends Monster {
             return;
         }
 
-        if (!hasEnteredScreen) {
+            if (!hasEnteredScreen) {
             x += dx;
             if (dx != 0) facingLeft = (dx < 0);
             getWalkAnimation().update();
-            if (x >= 0 && x <= panel.getWidth()) hasEnteredScreen = true;
+            applyGravityAndPlatforms(); 
+            
+            // Use world bounds instead of panel.getWidth()
+            int worldCentre = WorldConfig.WORLD_W / 2;
+            int margin = WorldConfig.WORLD_W / 4;
+            if (x > worldCentre - margin && x < worldCentre + margin) {
+                hasEnteredScreen = true;
+            }
             return;
         }
 
@@ -145,6 +152,7 @@ public class Healer extends Monster {
 
                 // Gravity 
                 applyGravityAndPlatforms();
+                tickAI();
                 break;
 
             case CHARGING_STRONG:
@@ -194,6 +202,7 @@ public class Healer extends Monster {
 
                 // Gravity
                 applyGravityAndPlatforms();
+                tickAI();
 
                 if (treasure != null &&
         getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {

@@ -51,7 +51,7 @@ public class DamagePack {
 
         double pulse    = Math.sin(age * 0.007) * 0.06 + 0.94;
         int    drawSize = (int)(SIZE * pulse);
-        int    offX     = (SIZE - drawSize) / 2;
+       
         int    cx       = x + SIZE / 2;
         int    cy       = drawY + SIZE / 2;
 
@@ -91,7 +91,7 @@ public class DamagePack {
 
         g2.setFont(new Font("Arial", Font.BOLD, 11));
         g2.setColor(rimCol);
-        String multLabel = "×" + (buffMultiplier == (int) buffMultiplier
+        String multLabel = "x" + (buffMultiplier == (int) buffMultiplier
                 ? String.valueOf((int) buffMultiplier)
                 : String.valueOf(buffMultiplier));
         FontMetrics fm = g2.getFontMetrics();

@@ -8,62 +8,57 @@ public class SolidObjectManager {
 
     private List<SolidObject> solidObjects = new ArrayList<>();
 
-    private static final Color WOOD  = new Color(101,  67,  33);
-    private static final Color STONE = new Color(115, 100,  82);
-    private static final Color DARK  = new Color( 70,  55,  40);
+    private static final Color WOOD = new Color(101, 67, 33);
+    private static final Color STONE = new Color(115, 100, 82);
+    private static final Color DARK = new Color(70, 55, 40);
 
     public SolidObjectManager() {
         loadLevel(1);
     }
 
-    /**
-     * Replaces the current platform set with the layout for the given level.
-     * Level 1  – no platforms (open flat map).
-     * Level 2  – two wide wooden platforms, monsters drop from them.
-     * Level 3  – three stone platforms at varying heights.
-     * Level 4  – four narrower platforms, more obstacles.
-     * Level 5  – six platforms creating a gauntlet.
-     */
     public void loadLevel(int level) {
         solidObjects.clear();
         int W = WorldConfig.WORLD_W;
 
         switch (level) {
 
-            case 1 -> { /* no platforms */ }
+            case 1 -> {
+            }
 
             case 2 -> {
-                // Two wide platforms, left and right of the treasure
-                addPlatform(  380, 200, 320, 18, WOOD);
-                addPlatform(W-700, 200, 320, 18, WOOD);
+                addPlatform(320, 200, 200, 18, WOOD);
+                addPlatform(750, 280, 180, 18, STONE);
+                addPlatform(W - 950, 280, 180, 18, STONE);
+                addPlatform(W - 520, 200, 200, 18, WOOD);
             }
 
             case 3 -> {
-                // Three stone platforms; the centre one is higher
-                addPlatform(  300, 215, 270, 20, STONE);
-                addPlatform(W/2-135, 170, 270, 20, STONE);
-                addPlatform(W-570, 215, 270, 20, STONE);
+                addPlatform(260, 190, 220, 20, STONE);
+                addPlatform(800, 240, 200, 20, STONE);
+                addPlatform(W - 580, 215, 220, 20, STONE);
+                addPlatform(W - 220, 190, 160, 20, DARK);
             }
 
             case 4 -> {
-                // Four narrower platforms – player must navigate around them
-                addPlatform(  250, 220, 210, 20, WOOD);
-                addPlatform(  730, 175, 210, 20, DARK);
-                addPlatform(W-940, 190, 210, 20, DARK);
-                addPlatform(W-460, 175, 210, 20, WOOD);
+                addPlatform(220, 220, 190, 20, WOOD);
+                addPlatform(620, 175, 190, 20, DARK);
+                addPlatform(920, 240, 170, 20, STONE);
+                addPlatform(W - 900, 175, 170, 20, STONE);
+                addPlatform(W - 610, 220, 190, 20, DARK);
+                addPlatform(W - 220, 175, 190, 20, WOOD);
             }
 
             case 5 -> {
-                // Six-platform gauntlet across the full world width
-                addPlatform(  220, 220, 185, 20, STONE);
-                addPlatform(  620, 180, 185, 20, STONE);
-                addPlatform(  980, 155, 185, 20, DARK);
-                addPlatform( 1390, 180, 185, 20, DARK);
-                addPlatform( 1740, 160, 185, 20, STONE);
-                addPlatform( 2090, 220, 185, 20, STONE);
+                addPlatform(180, 220, 170, 20, STONE);
+                addPlatform(520, 180, 170, 20, STONE);
+                addPlatform(860, 155, 170, 20, DARK);
+                addPlatform(W - 860, 180, 170, 20, DARK);
+                addPlatform(W - 520, 160, 170, 20, STONE);
+                addPlatform(W - 180, 220, 170, 20, STONE);
             }
 
-            default -> loadLevel(Math.min(level, 5));   // clamp to last layout
+            // clamp anything above level 5 to level 5
+            default -> loadLevel(Math.min(level, 5));
         }
     }
 
@@ -71,19 +66,16 @@ public class SolidObjectManager {
         solidObjects.add(new SolidObject(x, y, w, h, c));
     }
 
-    // physics and collision helpers
-
+    // returns the Y position an entity should land on given its current position,
+    // checking platforms first then falling back to the floor
     public int getLandingY(int x, int width, int currentY, int height) {
         final int floorSurface = WorldConfig.FLOOR_Y - height;
         int landingY = floorSurface;
 
         for (SolidObject so : solidObjects) {
-            int platTop     = so.getY();
-            int platSurface = platTop - height;   // where the object rests on this platform
-
+            int platSurface = so.getY() - height;
             boolean hOverlap = x + width > so.getX() && x < so.getX() + so.getWidth();
-
-            boolean approachingFromAbove = (currentY + height) <= platTop + 22;
+            boolean approachingFromAbove = (currentY + height) <= so.getY() + 22;
 
             if (hOverlap && approachingFromAbove && platSurface < floorSurface) {
                 landingY = platSurface;
@@ -92,42 +84,46 @@ public class SolidObjectManager {
         return landingY;
     }
 
-    // Spawn points for monsters to drop from when they spawn in the air 
-    public List<int[]> getPlatformSpawnPoints() {
+    // each platform gets one portal centered on it; if there are no platforms
+    public List<int[]> getPortalSpawnData() {
         List<int[]> pts = new ArrayList<>();
+
+        // Always add left and right edge portals (where monsters enter/respawn)
+        pts.add(new int[] { -50, WorldConfig.FLOOR_Y - 18, 52, 1 }); // left ground
+        pts.add(new int[] { WorldConfig.WORLD_W - 2, WorldConfig.FLOOR_Y - 18, 52, 1 }); // right ground
+
+        // Platform portals (levels 2+)
         for (SolidObject so : solidObjects) {
-            pts.add(new int[]{
-                so.getX() + so.getWidth() / 2,  
-                so.getY(),                        
-                so.getWidth()
-            });
+            pts.add(new int[] { so.getX(), so.getY(), so.getWidth(), 0 });
         }
+
         return pts;
     }
-
-
-    public List<SolidObject> getSolidObjects() { return solidObjects; }
 
     public void draw(Graphics2D g2) {
         for (SolidObject so : solidObjects) {
             so.draw(g2);
-            // draw a subtle darker edge
             g2.setColor(new Color(0, 0, 0, 60));
             g2.drawLine(so.getX(), so.getY(), so.getX() + so.getWidth(), so.getY());
         }
     }
 
+    public List<SolidObject> getSolidObjects() {
+        return solidObjects;
+    }
+
     public SolidObject collidesWith(Rectangle2D.Double boundingRectangle) {
         for (SolidObject so : solidObjects) {
-            if (so.getBoundingRectangle().intersects(boundingRectangle)) return so;
+            if (so.getBoundingRectangle().intersects(boundingRectangle))
+                return so;
         }
         return null;
     }
 
     public boolean onSolidObject(int x, int width) {
         for (SolidObject so : solidObjects) {
-            int right = so.getX() + so.getWidth() - 1;
-            if (x + width > so.getX() && x <= right) return true;
+            if (x + width > so.getX() && x <= so.getX() + so.getWidth() - 1)
+                return true;
         }
         return false;
     }

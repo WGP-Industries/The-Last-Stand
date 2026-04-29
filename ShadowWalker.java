@@ -59,6 +59,12 @@ public class ShadowWalker extends Monster {
 
     @Override
     public void draw(Graphics2D g2) {
+
+        if (dying) {
+            super.draw(g2);
+            return;
+        }
+
         Animation walkAnim = getWalkAnimation();
         Image raw = (walkAnim != null) ? walkAnim.getImage() : getImage();
 
@@ -69,11 +75,13 @@ public class ShadowWalker extends Monster {
 
         if (isBurning()) {
             frame = burnFX.applyToFrame(frame);
-            if (!permanentlyRevealed) disappearFX.reset();
+            if (!permanentlyRevealed)
+                disappearFX.reset();
         }
         if (isFrozen()) {
             frame = freezeFX.applyToFrame(frame);
-            if (!permanentlyRevealed) disappearFX.reset();
+            if (!permanentlyRevealed)
+                disappearFX.reset();
         }
         if (isElectrocuted()) {
             disappearFX.reset();
@@ -83,6 +91,10 @@ public class ShadowWalker extends Monster {
         if (disappearFX.getAlpha() > 0) {
             drawHealthBar(g2);
         }
+
+        if (electricFX.isActive())
+            electricFX.draw(g2);
+
     }
 
     @Override
@@ -91,7 +103,8 @@ public class ShadowWalker extends Monster {
                 getBoundingRectangle().intersects(treasure.getBoundingRectangle())) {
             treasure.takeDamage(damage);
             soundManager.playClip("hit", false);
-            if (!permanentlyRevealed) disappearFX.setFullyInvisible();
+            if (!permanentlyRevealed)
+                disappearFX.setFullyInvisible();
             respawn();
         }
     }
@@ -110,7 +123,8 @@ public class ShadowWalker extends Monster {
     protected void collideWithPlayer() {
         if (getBoundingRectangle().intersects(player.getBoundingRectangle())) {
             soundManager.playClip("hit", false);
-            if (!permanentlyRevealed) disappearFX.setFullyInvisible();
+            if (!permanentlyRevealed)
+                disappearFX.setFullyInvisible();
             respawn();
         }
     }

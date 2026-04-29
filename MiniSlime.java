@@ -4,9 +4,6 @@ import javax.swing.JPanel;
 
 public class MiniSlime extends SplitSlime {
 
-    private final BurnFX burnFX = new BurnFX();
-    private final FreezeFX freezeFX = new FreezeFX();
-
     public MiniSlime(JPanel p, int xPos, int yPos, Player player, Treasure treasure, int parentDx) {
         super(p, xPos, yPos, player, treasure);
 
@@ -48,13 +45,14 @@ public class MiniSlime extends SplitSlime {
         applyStatusEffects();
 
         switch (phase) {
-            case WALKING:
+            case WALKING -> {
                 x += dx;
                 if (dx != 0) facingLeft = (dx < 0);
                 if (!isFrozen()) getWalkAnimation().update();
 
                 // Gravity
                 applyGravityAndPlatforms();
+                tickAI();
 
                 if (sharedMonsterList != null) collideWithMonster(sharedMonsterList);
 
@@ -69,10 +67,11 @@ public class MiniSlime extends SplitSlime {
                     return;
                 }
 
-                if (x < -100 || x > panel.getWidth() + 100) respawn();
-                break;
+               if (x < -100 || x > WorldConfig.WORLD_W + 100) respawn();
 
-            case DYING:
+            }
+
+            case DYING -> {
                 Animation deathAnim = getDeathAnimation();
                 if (deathAnim != null) {
                     deathAnim.update();
@@ -84,29 +83,25 @@ public class MiniSlime extends SplitSlime {
                     phase = Phase.DEAD;
                     readyToRemove = true;
                 }
-                break;
+            }
 
-            case DEAD:
-                break;
+            case DEAD -> {
+            }
 
-            default:
-                break;
+            default -> {
+            }
         }
     }
 
     @Override
     public void draw(Graphics2D g2) {
         switch (phase) {
-            case WALKING:
-                g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
-                break;
-            case DYING:
-                g2.drawImage(getDeathAnimation().getImage(), x, y, width, height, null);
-                break;
-            case DEAD:
-                break;
-            default:
-                break;
+            case WALKING -> g2.drawImage(getWalkAnimation().getImage(), x, y, width, height, null);
+            case DYING -> g2.drawImage(getDeathAnimation().getImage(), x, y, width, height, null);
+            case DEAD -> {
+            }
+            default -> {
+            }
         }
         drawHealthBar(g2);
     }

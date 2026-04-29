@@ -7,7 +7,7 @@ public class BackgroundManager {
     private int numBackgrounds;
     private JFrame window;
 
-    // Original constructor kept for compatibility
+    // BackgroundManager constructor
    public BackgroundManager(JFrame window, int moveSize) {
     this(window, moveSize,
         new String[]{

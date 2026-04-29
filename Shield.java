@@ -4,7 +4,7 @@ import java.awt.geom.Rectangle2D;
 
 public class Shield {
 
-    private static final int SHIELD_WIDTH  = 30;
+    private static final int SHIELD_WIDTH = 30;
     private static final int SHIELD_HEIGHT = 60;
 
     private Image shieldImage;
@@ -26,7 +26,8 @@ public class Shield {
     }
 
     public boolean blocks(Bullet bullet) {
-        if (bullet.bypassesShield()) return false;
+        if (bullet.bypassesShield())
+            return false;
         return getBoundingRectangle().intersects(bullet.getBoundingRectangle());
     }
 
@@ -34,11 +35,11 @@ public class Shield {
         return new Rectangle2D.Double(x, y, SHIELD_WIDTH, SHIELD_HEIGHT);
     }
 
-        public void draw(Graphics2D g2) {
-            if (facingLeft) {
-                g2.drawImage(shieldImage, x, y, SHIELD_WIDTH, SHIELD_HEIGHT, null);
-            } else {
-                g2.drawImage(shieldImage, x + SHIELD_WIDTH, y, -SHIELD_WIDTH, SHIELD_HEIGHT, null);
-            }
+    public void draw(Graphics2D g2) {
+        if (facingLeft) {
+            g2.drawImage(shieldImage, x, y, SHIELD_WIDTH, SHIELD_HEIGHT, null);
+        } else {
+            g2.drawImage(shieldImage, x + SHIELD_WIDTH, y, -SHIELD_WIDTH, SHIELD_HEIGHT, null);
         }
+    }
 }
