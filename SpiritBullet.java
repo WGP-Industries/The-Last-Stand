@@ -9,8 +9,15 @@ public class SpiritBullet extends AnimatedBullet {
         damage = 5;
     }
 
-    @Override public double getSpeed()    { return 40; }
-    @Override public int    getCooldown() { return 300; }
+    @Override
+    public double getSpeed() {
+        return 40;
+    }
+
+    @Override
+    public int getCooldown() {
+        return 300;
+    }
 
     @Override
     public void onHit(Monster target, ArrayList<Monster> allMonsters) {
@@ -20,6 +27,7 @@ public class SpiritBullet extends AnimatedBullet {
             target.takeDamage(damage * 20);
         }
 
-        target.push(PUSH_AMOUNT);
+        target.push(PUSH_AMOUNT, (int) Math.signum(vx));
+
     }
 }

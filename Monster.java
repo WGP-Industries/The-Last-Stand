@@ -44,7 +44,8 @@ public abstract class Monster {
     private int burnStepCounter = 0;
     private static final int BURN_TICK_INTERVAL = 4;
 
-    protected int pushVelocity = 0;
+    protected float pushVelocity = 0f;
+
     private static final double PUSH_FRICTION = 0.75;
 
     private boolean electricuted = false;
@@ -242,13 +243,16 @@ public abstract class Monster {
             electricFX.updatePosition(x, y, width, height);
         }
 
-        if (pushVelocity != 0) {
-            x += pushVelocity;
-            pushVelocity = (int) (pushVelocity * PUSH_FRICTION);
-            if (Math.abs(pushVelocity) < 1) {
-                pushVelocity = 0;
-                if (!frozen && dx == 0 && savedDx != 0)
+        if (pushVelocity != 0f) {
+            x += (int) pushVelocity;
+            pushVelocity *= PUSH_FRICTION;
+            if (Math.abs(pushVelocity) < 0.5f) {
+                pushVelocity = 0f;
+                // restore movement only if still alive and not frozen
+                if (!frozen && !dying && dx == 0 && savedDx != 0) {
                     dx = savedDx;
+                    savedDx = 0;
+                }
             }
         }
     }
@@ -341,13 +345,14 @@ public abstract class Monster {
         return electricuted;
     }
 
-    public void push(int amount) {
-        int travelDir = frozen ? savedDx : dx;
-        pushVelocity = (travelDir < 0) ? amount : -amount;
+    public void push(float amount, int directionX) {
+
         if (!frozen) {
-            savedDx = dx;
+            if (dx != 0)
+                savedDx = dx;
             dx = 0;
         }
+        pushVelocity = (directionX >= 0 ? 1 : -1) * amount;
     }
 
     public void heal(int amount) {
