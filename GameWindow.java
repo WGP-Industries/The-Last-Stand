@@ -1010,7 +1010,7 @@ public class GameWindow extends JFrame
                 .filter(c -> c == SplitSlime.class)
                 .toList();
 
-        if (currentSpawnData.level > 4 && random.nextInt(10) != 0)
+        if (currentSpawnData.level > 2 && random.nextInt(10) != 0)
             return;
 
         if (slimePool.isEmpty())
