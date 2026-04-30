@@ -18,14 +18,17 @@ public class Treasure {
         destroyed = false;
     }
 
+    // Draw treasure and its health bar
     public void draw(Graphics2D g2) {
-        if (destroyed) return;
+        if (destroyed)
+            return;
 
         float ratio = (float) hp / maxHp;
         Color gemColor = new Color(1 - ratio, ratio * 0.8f, ratio);
 
         g2.setColor(gemColor);
         g2.fill(new Ellipse2D.Double(x, y, size, size));
+
         g2.setColor(Color.WHITE);
         g2.draw(new Ellipse2D.Double(x, y, size, size));
 
@@ -33,14 +36,16 @@ public class Treasure {
         g2.fillRect(x - 5, y + size + 5, size + 10, 8);
 
         g2.setColor(new Color(1 - ratio, ratio, 0f));
-        g2.fillRect(x - 5, y + size + 5, (int)((size + 10) * ratio), 8);
+        g2.fillRect(x - 5, y + size + 5, (int) ((size + 10) * ratio), 8);
 
         g2.setColor(Color.WHITE);
         g2.drawRect(x - 5, y + size + 5, size + 10, 8);
     }
 
+    // Reduce hp and mark destroyed if empty
     public void takeDamage(int damage) {
-        if (destroyed) return;
+        if (destroyed)
+            return;
         hp -= damage;
         if (hp <= 0) {
             hp = 0;
@@ -48,15 +53,26 @@ public class Treasure {
         }
     }
 
+    // Restore hp up to max
     public void heal(int amount) {
-        if (destroyed) return;
+        if (destroyed)
+            return;
         hp = Math.min(hp + amount, maxHp);
     }
 
-    public boolean isDestroyed() { return destroyed; }
-    public int getHp()           { return hp; }
-    public int getMaxHp()        { return maxHp; }
+    public boolean isDestroyed() {
+        return destroyed;
+    }
 
+    public int getHp() {
+        return hp;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
+    }
+
+    // Used for collision checks
     public Rectangle2D.Double getBoundingRectangle() {
         return new Rectangle2D.Double(x, y, size, size);
     }

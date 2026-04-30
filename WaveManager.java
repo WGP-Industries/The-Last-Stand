@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+// Handles wave progression and unlocks
 public class WaveManager {
 
     private static final int TOTAL_WAVES = 15;
@@ -37,22 +38,22 @@ public class WaveManager {
         return unlockedMonsters;
     }
 
+    // Reset progression
     public void reset() {
         currentWave = 0;
         currentLevel = 1;
         unlockedMonsters.clear();
         unlockedBullets.clear();
-        // unlockAllBullets();
+        unlockBulletsForLevel(1);
     }
 
+    // Unlock monsters at specific waves
     private void unlockMonstersForWave(int wave) {
         switch (wave) {
             case 1 -> {
                 unlockedMonsters.add(Snake.class);
-
                 unlockedMonsters.add(Ghost.class);
             }
-
             case 3 -> unlockedMonsters.add(ShadowWalker.class);
             case 4 -> unlockedMonsters.add(ArmoredTurtle.class);
             case 5 -> unlockedMonsters.add(Healer.class);
@@ -63,37 +64,38 @@ public class WaveManager {
         }
     }
 
+    // Unlock every bullet type
     private void unlockAllBullets() {
         for (BulletType type : BulletType.values()) {
             if (!unlockedBullets.contains(type)) {
                 unlockedBullets.add(type);
             }
         }
-
     }
 
+    // Jump to a specific wave
     public void skipToWave(int targetWave) {
         currentWave = 0;
         currentLevel = 1;
         unlockedMonsters.clear();
         unlockedBullets.clear();
         unlockAllBullets();
-        // Unlock all monsters up to target
+
         for (int w = 1; w <= targetWave; w++) {
             unlockMonstersForWave(w);
         }
+
         currentWave = targetWave;
         currentLevel = (int) Math.ceil((double) currentWave / 3);
     }
 
+    // Unlock bullets based on level
     private void unlockBulletsForLevel(int level) {
         switch (level) {
             case 1 -> {
                 unlockedBullets.add(BulletType.BASIC);
                 unlockedBullets.add(BulletType.FIRE);
-                unlockedBullets.add(BulletType.RAPID);
             }
-
             case 2 -> {
                 unlockedBullets.add(BulletType.FREEZE);
                 unlockedBullets.add(BulletType.ELECTRIC);
@@ -110,6 +112,7 @@ public class WaveManager {
         }
     }
 
+    // Decide how many enemies spawn
     private int getWaveSize() {
         if (currentWave <= 3)
             return random.nextInt(4, 6) + 1;
@@ -122,6 +125,7 @@ public class WaveManager {
         return random.nextInt(4) + 5;
     }
 
+    // Generate next wave
     public SpawnData nextWave() {
         currentWave++;
 
@@ -140,6 +144,7 @@ public class WaveManager {
         for (int i = 0; i < size; i++) {
             Class<? extends Monster> pick = pool.get(random.nextInt(pool.size()));
 
+            // Prevent all-healer waves
             boolean pickedHealer = pick == Healer.class;
             boolean noNonHealerYet = selected.stream().noneMatch(c -> c != Healer.class);
 

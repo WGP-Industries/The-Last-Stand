@@ -1,16 +1,18 @@
+
+// BurnFX applies a red tint to the monster's image to indicate that it is burning.
+
 public class BurnFX extends MonsterTintFX {
 
     public BurnFX() {
         super(80);
     }
-    
 
     @Override
     protected int applyTint(int pixel) {
         int alpha = (pixel >> 24) & 255;
-        int red   = (pixel >> 16) & 255;
-        int green = (pixel >>  8) & 255;
-        int blue  =  pixel        & 255;
+        int red = (pixel >> 16) & 255;
+        int green = (pixel >> 8) & 255;
+        int blue = pixel & 255;
 
         red = truncateValue(red + tintStrength);
 

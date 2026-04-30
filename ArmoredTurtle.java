@@ -1,6 +1,7 @@
 import java.awt.Image;
 import javax.swing.JPanel;
 
+// ArmoredTurtle is a slow-moving but tough monster that takes half damage from all sources. It has a unique walking animation and a distinct death sound. It does not damage the player on contact, but instead respawns at a random portal when touched.
 public class ArmoredTurtle extends Monster {
 
     public ArmoredTurtle(JPanel p, int xPos, int yPos, Player player, Treasure treasure) {
@@ -17,8 +18,10 @@ public class ArmoredTurtle extends Monster {
         walkRightAnimation = new Animation(true);
 
         for (int i = 1; i <= 8; i++) {
-            walkLeftAnimation.addFrame(ImageManager.loadImage("images/armored_turtle/armored_turtle_left_" + i + ".png"), 100);
-            walkRightAnimation.addFrame(ImageManager.loadImage("images/armored_turtle/armored_turtle_right_" + i + ".png"), 100);
+            walkLeftAnimation
+                    .addFrame(ImageManager.loadImage("images/armored_turtle/armored_turtle_left_" + i + ".png"), 100);
+            walkRightAnimation
+                    .addFrame(ImageManager.loadImage("images/armored_turtle/armored_turtle_right_" + i + ".png"), 100);
         }
 
         walkLeftAnimation.start();
@@ -38,11 +41,14 @@ public class ArmoredTurtle extends Monster {
     @Override
     public void takeDamage(int damage) {
         hp -= damage / 2;
-        if (isDead()) playDeathSound();
+        if (isDead())
+            playDeathSound();
     }
 
     @Override
-    public boolean isResistantToPiercing() { return false; }
+    public boolean isResistantToPiercing() {
+        return false;
+    }
 
     @Override
     protected Image getImage() {

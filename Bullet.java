@@ -3,6 +3,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import javax.swing.JPanel;
 
+// Base class for bullets. It defines common properties and methods for all bullet types,
 public abstract class Bullet {
 
     protected JPanel panel;

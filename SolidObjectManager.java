@@ -88,7 +88,7 @@ public class SolidObjectManager {
     public List<int[]> getPortalSpawnData() {
         List<int[]> pts = new ArrayList<>();
 
-        // Always add left and right edge portals (where monsters enter/respawn)
+        // Always add left and right edge portals
         pts.add(new int[] { -50, WorldConfig.FLOOR_Y - 18, 52, 1 }); // left ground
         pts.add(new int[] { WorldConfig.WORLD_W - 2, WorldConfig.FLOOR_Y - 18, 52, 1 }); // right ground
 
@@ -118,6 +118,10 @@ public class SolidObjectManager {
                 return so;
         }
         return null;
+    }
+
+    public void addTemporary(SolidObject so) {
+        solidObjects.add(so);
     }
 
     public boolean onSolidObject(int x, int width) {

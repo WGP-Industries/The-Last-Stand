@@ -5,25 +5,24 @@ public class BackgroundManager {
 
     private Background[] backgrounds;
     private int numBackgrounds;
-    private JFrame window;
 
-    // BackgroundManager constructor
-   public BackgroundManager(JFrame window, int moveSize) {
-    this(window, moveSize,
-        new String[]{
-            "images/surface/sky.png",
-            "images/surface/jungle_bg.png",
-            "images/surface/trees&bushes.png",
-            "images/surface/lianas.png",
-            "images/surface/fireflies.png",
-            "images/surface/grasses.png",
-        },
-        new int[]{1, 2, 2, 3,3 , 3}
-    );
-}
+    // BackgroundManager manages multiple Background layers to create a parallax
+    // scrolling effect.
+    public BackgroundManager(JFrame window, int moveSize) {
+        this(window, moveSize,
+                new String[] {
+                        "images/surface/sky.png",
+                        "images/surface/jungle_bg.png",
+                        "images/surface/trees&bushes.png",
+                        "images/surface/lianas.png",
+                        "images/surface/fireflies.png",
+                        "images/surface/grasses.png",
+                },
+                new int[] { 1, 2, 2, 3, 3, 3 });
+    }
 
     public BackgroundManager(JFrame window, int moveSize, String[] imageFiles, int[] moveAmounts) {
-        this.window = window;
+
         numBackgrounds = imageFiles.length;
         backgrounds = new Background[numBackgrounds];
         for (int i = 0; i < numBackgrounds; i++) {
@@ -41,15 +40,15 @@ public class BackgroundManager {
             backgrounds[i].moveLeft();
     }
 
-
     public void moveUp(float[] amounts) {
-    for (int i = 0; i < numBackgrounds; i++)
-        backgrounds[i].moveUp(amounts[i]);
-}
-public void moveDown(float[] amounts) {
-    for (int i = 0; i < numBackgrounds; i++)
-        backgrounds[i].moveDown(amounts[i]);
-}
+        for (int i = 0; i < numBackgrounds; i++)
+            backgrounds[i].moveUp(amounts[i]);
+    }
+
+    public void moveDown(float[] amounts) {
+        for (int i = 0; i < numBackgrounds; i++)
+            backgrounds[i].moveDown(amounts[i]);
+    }
 
     public void draw(Graphics2D g2) {
         for (int i = 0; i < numBackgrounds; i++)

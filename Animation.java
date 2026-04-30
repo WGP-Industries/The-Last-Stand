@@ -1,6 +1,7 @@
 import java.awt.Image;
 import java.util.ArrayList;
 
+// Animation class that manages a sequence of images (frames) and their timing for sprite animations.
 public class Animation {
 
     private ArrayList<AnimFrame> frames;
@@ -40,7 +41,8 @@ public class Animation {
     }
 
     public synchronized void update() {
-        if (!isActive) return;
+        if (!isActive)
+            return;
 
         long currTime = System.currentTimeMillis();
         long elapsedTime = currTime - startTime;
@@ -57,7 +59,8 @@ public class Animation {
                 }
             }
 
-            if (!isActive) return;
+            if (!isActive)
+                return;
 
             while (animTime > getFrame(currFrameIndex).endTime) {
                 currFrameIndex++;

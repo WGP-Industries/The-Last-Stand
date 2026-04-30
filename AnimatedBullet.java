@@ -4,18 +4,19 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
+// Base class for bullets that use sprite animations. It handles loading the sprite sheet,
 public abstract class AnimatedBullet extends Bullet {
 
     protected Animation animation;
 
     public AnimatedBullet(JPanel panel, int xPos, int yPos,
-                          String spriteFile, int frameCount, long frameDuration) {
+            String spriteFile, int frameCount, long frameDuration) {
         super(panel, xPos, yPos);
 
         Image strip = ImageManager.loadImage(spriteFile);
         int fw = strip.getWidth(null) / frameCount;
         int fh = strip.getHeight(null);
-        width  = fw;
+        width = fw;
         height = fh;
 
         animation = new Animation(true);
@@ -33,13 +34,13 @@ public abstract class AnimatedBullet extends Bullet {
     }
 
     public AnimatedBullet(JPanel panel, int xPos, int yPos,
-                          String spriteFile, int cols, int rows, long frameDuration) {
+            String spriteFile, int cols, int rows, long frameDuration) {
         super(panel, xPos, yPos);
 
         Image strip = ImageManager.loadImage(spriteFile);
         int fw = strip.getWidth(null) / cols;
         int fh = strip.getHeight(null) / rows;
-        width  = fw;
+        width = fw;
         height = fh;
 
         animation = new Animation(true);
@@ -67,11 +68,12 @@ public abstract class AnimatedBullet extends Bullet {
     @Override
     public void draw(Graphics2D g2) {
         Image frame = animation.getImage();
-        if (frame == null) return;
+        if (frame == null)
+            return;
 
         AffineTransform original = g2.getTransform();
         double angle = Math.atan2(vy, vx);
-        double cx = x + width  / 2.0;
+        double cx = x + width / 2.0;
         double cy = y + height / 2.0;
 
         g2.translate(cx, cy);

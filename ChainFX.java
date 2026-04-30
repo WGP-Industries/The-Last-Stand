@@ -3,6 +3,7 @@ import java.awt.Image;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
+// ChainFX is a special effect that visually connects two monsters with an electric chain when the electric bullet hits. It uses a short animation to show the chain extending and then fading out.
 public class ChainFX {
 
     private final Animation chainAnim;
@@ -26,28 +27,36 @@ public class ChainFX {
     }
 
     public void trigger(double x1, double y1, double x2, double y2) {
-        this.x1 = x1; this.y1 = y1;
-        this.x2 = x2; this.y2 = y2;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
         chainAnim.start();
         active = true;
     }
 
     public void tick() {
-        if (active) chainAnim.update();
-        if (!chainAnim.isStillActive()) active = false;
+        if (active)
+            chainAnim.update();
+        if (!chainAnim.isStillActive())
+            active = false;
     }
 
-    public boolean isActive() { return active; }
+    public boolean isActive() {
+        return active;
+    }
 
     public void draw(Graphics2D g2) {
-        if (!active) return;
+        if (!active)
+            return;
         Image frame = chainAnim.getImage();
-        if (frame == null) return;
+        if (frame == null)
+            return;
 
         double dx = x2 - x1;
         double dy = y2 - y1;
         double length = Math.hypot(dx, dy);
-        double angle  = Math.atan2(dy, dx);
+        double angle = Math.atan2(dy, dx);
 
         AffineTransform old = g2.getTransform();
         g2.translate(x1, y1);

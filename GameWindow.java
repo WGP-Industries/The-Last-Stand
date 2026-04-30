@@ -89,7 +89,7 @@ public class GameWindow extends JFrame
     // portal stuff
     private final LinkedList<Monster> spawnQueue = new LinkedList<>();
     private int spawnTickTimer = 0;
-    private static final int SPAWN_INTERVAL = 35; // ticks (~1.75s at 50ms) between each monster
+    private static final int SPAWN_INTERVAL = 35; // ticks between each monster
     private ArrayList<Portal> portals = new ArrayList<>();
 
     private static final Rectangle BTN_MENU_START = new Rectangle(380, 234, 200, 50);
@@ -868,7 +868,7 @@ public class GameWindow extends JFrame
         g.setColor(new Color(180, 180, 180));
         int nextLevel = completedLevel + 1;
         drawCentred(g, "Next: Level " + nextLevel
-                + "  (Waves " + (currentWave + 1) + "–" + (currentWave + 3) + ")", 270);
+                + "  (Waves " + (currentWave + 1) + "-" + (currentWave + 3) + ")", 270);
 
         drawBtn(g, BTN_LEVEL_CONTINUE, "Continue", hLevelContinue, new Color(30, 120, 30), new Color(50, 190, 50));
         drawBtn(g, BTN_LEVEL_MENU, "Main Menu", hLevelMenu, new Color(50, 70, 135), new Color(70, 105, 195));
@@ -954,10 +954,10 @@ public class GameWindow extends JFrame
         spawnTickTimer = SPAWN_INTERVAL; // fire first monster immediately
 
         for (Class<? extends Monster> type : shuffled) {
-            // Pick a random portal each time
+
             int[] pt = portalData.get(random.nextInt(portalData.size()));
             int xPos = pt[0] + pt[2] / 2 - 20; // centre of portal minus half monster width
-            int yPos = pt[1] - 58; // above portal, gravity pulls it down
+            int yPos = pt[1] - 58;
 
             Monster m = createMonster(type, xPos, yPos);
             m.sharedMonsterList = activeMonsters;
@@ -1131,8 +1131,10 @@ public class GameWindow extends JFrame
                     System.exit(0);
                 else if (BTN_PAUSE_MUTE.contains(x, y)) {
                     musicMuted = !musicMuted;
-                    if (musicMuted) soundManager.stopClip("background");
-                    else soundManager.playClip("background", true);
+                    if (musicMuted)
+                        soundManager.stopClip("background");
+                    else
+                        soundManager.playClip("background", true);
                 }
             }
             case LEVEL_COMPLETE -> {
