@@ -158,7 +158,7 @@ public class GameWindow extends JFrame
     public void createGameEntities() {
         int worldCx = WorldConfig.WORLD_W / 2;
 
-        solidObjectManager = new SolidObjectManager(); // starts at level 1 (no platforms)
+        solidObjectManager = new SolidObjectManager(); // starts at level 1
 
         player = new Player(gameArea, worldCx, 0);
         player.setSolidObjectManager(solidObjectManager); // player can land on platforms
@@ -219,6 +219,7 @@ public class GameWindow extends JFrame
         if (!gameStarted) {
             createGameEntities();
             state = GameState.PLAYING;
+            waveManager.reset();
             gameStarted = true;
             soundManager.playClip("background", true);
         }
@@ -293,6 +294,7 @@ public class GameWindow extends JFrame
         processElectricBullets();
         spawnPendingMinis();
         removeDeadMonsters();
+        tickPackRespawns();
         scoreLabel.setText("Score: " + monstersKilled);
         tickSkyDrop();
         checkWaveProgression();
@@ -314,8 +316,12 @@ public class GameWindow extends JFrame
         transitionTicks--;
         if (transitionTicks == TRANSITION_DURATION / 2) {
             underground = !underground;
-            if (underground)
+            if (underground) {
                 bullets.clear();
+                player.setSolidObjectManager(null);
+            } else {
+                player.setSolidObjectManager(solidObjectManager);
+            }
         }
     }
 
@@ -360,15 +366,6 @@ public class GameWindow extends JFrame
         }
         healthPacks.removeIf(HealthPack::isCollected);
 
-        if (healthPacks.isEmpty()) {
-            healthPackRespawnTimer++;
-            if (healthPackRespawnTimer >= HEALTH_PACK_RESPAWN) {
-                spawnHealthPacks();
-                healthPackRespawnTimer = 0;
-            }
-        } else {
-            healthPackRespawnTimer = 0;
-        }
     }
 
     private void handleDamagePacks(Rectangle2D.Double pRect) {
@@ -436,6 +433,18 @@ public class GameWindow extends JFrame
             }
         }
         return false;
+    }
+
+    private void tickPackRespawns() {
+        if (healthPacks.isEmpty()) {
+            healthPackRespawnTimer++;
+            if (healthPackRespawnTimer >= HEALTH_PACK_RESPAWN) {
+                spawnHealthPacks();
+                healthPackRespawnTimer = 0;
+            }
+        } else {
+            healthPackRespawnTimer = 0;
+        }
     }
 
     private void processElectricBullets() {
@@ -514,7 +523,7 @@ public class GameWindow extends JFrame
                 saveProgress();
                 state = GameState.LEVEL_COMPLETE;
                 gameStarted = false;
-                soundManager.stopClip("background");
+
             } else {
                 spawnWave();
             }
@@ -609,7 +618,7 @@ public class GameWindow extends JFrame
 
         if (treasure != null)
             treasure.draw(g);
-        if (solidObjectManager != null)
+        if (solidObjectManager != null && !underground)
             solidObjectManager.draw(g); // elevated platforms
         if (player != null)
             player.draw(g);
@@ -687,7 +696,7 @@ public class GameWindow extends JFrame
             g.setColor(new Color(255, 160, 80, 200));
             String msg = "Health packs respawning in " + secsLeft + "s";
             FontMetrics fm = g.getFontMetrics();
-            g.drawString(msg, (int) camX + (W - fm.stringWidth(msg)) / 2, H - 40);
+            g.drawString(msg, (int) camX + (W - fm.stringWidth(msg)) / 2, H - 80);
         }
     }
 
@@ -743,14 +752,14 @@ public class GameWindow extends JFrame
         g.setFont(new Font("Arial", Font.BOLD, 13));
         g.setColor(Color.WHITE);
         g.drawString(waveLabel.getText(), 8, 19);
-        g.drawString(scoreLabel.getText(), 200, 19);
+        g.drawString(scoreLabel.getText(), 180, 19);
 
         g.setColor(new Color(255, 215, 0));
-        g.drawString("⬤ " + coins + " coins", 340, 19);
+        g.drawString("⬤ " + coins + " coins", 300, 19);
 
         if (player != null && player.getDamageMultiplier() > 1.01f) {
             g.setColor(new Color(255, 100, 100));
-            g.drawString("DMG x" + String.format("%.2f", player.getDamageMultiplier()), 470, 19);
+            g.drawString("DMG x" + String.format("%.2f", player.getDamageMultiplier()), 390, 19);
         }
 
         g.setColor(Color.WHITE);
@@ -793,7 +802,7 @@ public class GameWindow extends JFrame
 
         g.setFont(new Font("Arial", Font.BOLD, 54));
         g.setColor(new Color(255, 220, 0));
-        drawCentred(g, "Treasure Defender", 90);
+        drawCentred(g, "The Last Stand", 90);
 
         g.setFont(new Font("Arial", Font.ITALIC, 17));
         g.setColor(new Color(200, 200, 200));
@@ -969,6 +978,7 @@ public class GameWindow extends JFrame
 
             spawnQueue.add(m);
         }
+
     }
 
     private void checkStompCollisions() {
@@ -977,8 +987,9 @@ public class GameWindow extends JFrame
         Rectangle2D.Double pr = player.getBoundingRectangle();
         int feetY = (int) (pr.y + pr.height);
         for (Monster m : activeMonsters) {
-            if (m.isDead())
+            if (m.isDead() || m instanceof Ghost)
                 continue;
+
             Rectangle2D.Double mr = m.getBoundingRectangle();
             int topY = (int) mr.y;
             boolean hOverlap = pr.x + pr.width > mr.x && pr.x < mr.x + mr.width;
