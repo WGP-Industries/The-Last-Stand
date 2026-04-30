@@ -808,7 +808,7 @@ public class GameWindow extends JFrame
         g.setColor(new Color(200, 200, 200));
         drawCentred(g, "Defeat the monsters! Protect the treasure. Explore the underground!", 122);
 
-        g.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        g.setFont(new Font("Arial", Font.BOLD, 15));
         g.setColor(new Color(140, 140, 140));
         drawCentred(g, "← →  Move    SPACE  Jump    Mouse  Aim+Shoot    1-9  Bullets"
                 + "    SHIFT  Underground    ESC  Pause", 380);
