@@ -113,7 +113,7 @@ public class MiniSlime extends SplitSlime {
 
     @Override
     public void playDeathSound() {
-        soundManager.playClip("die", false);
+        soundManager.playClip("slime_die", false);
     }
 
     @Override

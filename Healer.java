@@ -260,6 +260,6 @@ public class Healer extends Monster {
 
     @Override
     protected void playDeathSound() {
-        soundManager.playClip("die", false);
+        soundManager.playClip("healer_die", false);
     }
 }

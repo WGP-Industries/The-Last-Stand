@@ -363,7 +363,7 @@ public class FireImp extends Monster {
 
     @Override
     public void playDeathSound() {
-        soundManager.playClip("die", false);
+        soundManager.playClip("fire_imp_die", false);
     }
 
     @Override

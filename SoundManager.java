@@ -32,6 +32,24 @@ public class SoundManager { // a Singleton class
 		clip = loadClip("sounds/snake_die.wav"); // played when the snake monster dies
 		clips.put("die2", clip);
 
+		clip = loadClip("sounds/BerserkerOrc_die.wav");
+		clips.put("berserker_orc_die", clip);
+
+		clip = loadClip("sounds/FireImp_die.wav");
+		clips.put("fire_imp_die", clip);
+
+		clip = loadClip("sounds/Healer_die.wav");
+		clips.put("healer_die", clip);
+
+		clip = loadClip("sounds/ShadowWalker_die.wav");
+		clips.put("shadow_walker_die", clip);
+
+		clip = loadClip("sounds/ShieldGuardian_die.wav");
+		clips.put("shield_guardian_die", clip);
+
+		clip = loadClip("sounds/slime_die.wav");
+		clips.put("slime_die", clip);
+
 		clip = loadClip("sounds/player_shoot.wav"); // played when the player shoots a bullet
 		clips.put("shoot", clip);
 

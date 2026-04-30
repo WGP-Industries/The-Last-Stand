@@ -173,6 +173,6 @@ public class ShieldGuardian extends Monster {
 
     @Override
     public void playDeathSound() {
-        soundManager.playClip("die", false);
+        soundManager.playClip("shield_guardian_die", false);
     }
 }

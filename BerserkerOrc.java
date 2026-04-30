@@ -126,5 +126,5 @@ public class BerserkerOrc extends Monster {
     }
 
     @Override
-    public void playDeathSound() { soundManager.playClip("die", false); }
+    public void playDeathSound() { soundManager.playClip("berserker_orc_die", false); }
 }

@@ -116,7 +116,7 @@ public class ShadowWalker extends Monster {
 
     @Override
     public void playDeathSound() {
-        soundManager.playClip("die", false);
+        soundManager.playClip("shadow_walker_die", false);
     }
 
     @Override

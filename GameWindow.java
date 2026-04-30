@@ -97,6 +97,7 @@ public class GameWindow extends JFrame
     private static final Rectangle BTN_PAUSE_RESUME = new Rectangle(380, 190, 200, 50);
     private static final Rectangle BTN_PAUSE_MENU = new Rectangle(380, 255, 200, 50);
     private static final Rectangle BTN_PAUSE_EXIT = new Rectangle(380, 320, 200, 50);
+    private static final Rectangle BTN_PAUSE_MUTE = new Rectangle(380, 385, 200, 50);
     private static final Rectangle BTN_END_MENU = new Rectangle(380, 270, 200, 50);
     private static final Rectangle BTN_END_EXIT = new Rectangle(380, 340, 200, 50);
     private static final Rectangle BTN_LEVEL_CONTINUE = new Rectangle(280, 315, 160, 45);
@@ -104,10 +105,11 @@ public class GameWindow extends JFrame
     private static final Rectangle BTN_MENU_CONTINUE = new Rectangle(380, 176, 200, 50);
 
     private boolean hMenuStart, hMenuExit;
-    private boolean hPauseResume, hPauseMenu, hPauseExit;
+    private boolean hPauseResume, hPauseMenu, hPauseExit, hPauseMute;
     private boolean hEndMenu, hEndExit;
     private boolean hLevelContinue, hLevelMenu;
     private boolean hMenuContinue;
+    private boolean musicMuted = false;
 
     public GameWindow() {
         super("Last Stand");
@@ -823,6 +825,8 @@ public class GameWindow extends JFrame
         drawBtn(g, BTN_PAUSE_RESUME, "Resume", hPauseResume, new Color(30, 120, 30), new Color(50, 190, 50));
         drawBtn(g, BTN_PAUSE_MENU, "Main Menu", hPauseMenu, new Color(50, 70, 135), new Color(70, 105, 195));
         drawBtn(g, BTN_PAUSE_EXIT, "Exit", hPauseExit, new Color(120, 30, 30), new Color(190, 50, 50));
+        String muteLabel = musicMuted ? "Unmute Music" : "Mute Music";
+        drawBtn(g, BTN_PAUSE_MUTE, muteLabel, hPauseMute, new Color(60, 60, 60), new Color(100, 100, 100));
     }
 
     private void drawEndScreen(Graphics2D g, boolean won) {
@@ -1125,6 +1129,11 @@ public class GameWindow extends JFrame
                     stopGame();
                 else if (BTN_PAUSE_EXIT.contains(x, y))
                     System.exit(0);
+                else if (BTN_PAUSE_MUTE.contains(x, y)) {
+                    musicMuted = !musicMuted;
+                    if (musicMuted) soundManager.stopClip("background");
+                    else soundManager.playClip("background", true);
+                }
             }
             case LEVEL_COMPLETE -> {
                 if (BTN_LEVEL_CONTINUE.contains(x, y)) {
@@ -1181,6 +1190,7 @@ public class GameWindow extends JFrame
         hPauseResume = BTN_PAUSE_RESUME.contains(x, y);
         hPauseMenu = BTN_PAUSE_MENU.contains(x, y);
         hPauseExit = BTN_PAUSE_EXIT.contains(x, y);
+        hPauseMute = BTN_PAUSE_MUTE.contains(x, y);
         hEndMenu = BTN_END_MENU.contains(x, y);
         hEndExit = BTN_END_EXIT.contains(x, y);
         hLevelContinue = BTN_LEVEL_CONTINUE.contains(x, y);
