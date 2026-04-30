@@ -42,6 +42,11 @@ public class Ghost extends Monster {
     }
 
     @Override
+    public boolean isImmuneToExplosive() {
+        return true;
+    }
+
+    @Override
     protected void collideWithPlayer() {
     }
 }

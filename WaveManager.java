@@ -79,10 +79,12 @@ public class WaveManager {
         currentLevel = 1;
         unlockedMonsters.clear();
         unlockedBullets.clear();
-        unlockAllBullets();
 
         for (int w = 1; w <= targetWave; w++) {
             unlockMonstersForWave(w);
+        }
+        for (int w = 1; w <= targetWave; w++) {
+            unlockBulletsForLevel((int) Math.ceil((double) w / 3));
         }
 
         currentWave = targetWave;

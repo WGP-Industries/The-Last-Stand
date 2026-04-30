@@ -1122,9 +1122,9 @@ public class GameWindow extends JFrame
                     int[] save = loadProgress();
                     if (save != null) {
                         createGameEntities();
-                        for (int i = 0; i < save[0]; i++)
-                            waveManager.nextWave();
+
                         currentWave = save[0];
+                        waveManager.skipToWave(currentWave);
                         monstersKilled = save[1];
                         completedLevel = save[2];
                         scoreLabel.setText("Score: " + monstersKilled);

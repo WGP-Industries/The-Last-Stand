@@ -213,6 +213,11 @@ public abstract class Monster {
         return true;
     }
 
+    public boolean isImmuneToExplosive() {
+        return false;
+
+    }
+
     public boolean isReadyToRemove() {
         return readyToRemove;
     }
