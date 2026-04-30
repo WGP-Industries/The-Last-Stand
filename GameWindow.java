@@ -423,7 +423,7 @@ public class GameWindow extends JFrame
             if (m instanceof ShieldGuardian sg && path.intersects(sg.getShield().getBoundingRectangle()))
                 return true;
 
-            if (m instanceof SplitSlime ss && ss.hitMiniSlime(b) && !b.isPiercing())
+            if (m instanceof SplitSlime ss && ss.hitMiniSlime(b, activeMonsters) && !b.isPiercing())
                 return true;
 
             if (path.intersects(m.getBoundingRectangle())) {
@@ -1010,7 +1010,7 @@ public class GameWindow extends JFrame
                 .filter(c -> c == SplitSlime.class)
                 .toList();
 
-        if (currentSpawnData.level > 6 && random.nextInt(10) != 0)
+        if (currentSpawnData.level > 4 && random.nextInt(10) != 0)
             return;
 
         if (slimePool.isEmpty())

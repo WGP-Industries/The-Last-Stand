@@ -211,14 +211,14 @@ public class SplitSlime extends Monster {
         splitPrevented = true;
     }
 
-    public boolean hitMiniSlime(Bullet bullet) {
+    public boolean hitMiniSlime(Bullet bullet, ArrayList<Monster> allMonsters) {
         if (!bullet.isActive())
             return false;
 
         for (MiniSlime mini : miniSlimes) {
             if (!mini.isDead() &&
                     bullet.getBoundingRectangle().intersects(mini.getBoundingRectangle())) {
-                bullet.onHit(mini, new ArrayList<>());
+                bullet.onHit(mini, allMonsters);
                 return true;
             }
         }
