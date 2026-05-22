@@ -41,8 +41,8 @@ The game ships with nine enemy types, nine projectile types with distinct mechan
 
 | Contributor | Responsibilities |
 |---|---|
-| **Adrian Deo** | Controls and player mechanics, all bullet types and the `AnimatedBullet` class, bullet-monster interaction logic, underground background and pack system, UI buttons, `SolidObjectManager` level design, `GameWindow` rework |
-| **Josiah Alexis** | Player and monster animations, `WaveManager`, `BackgroundManager` parallax, `Treasure`, portals and fireballs, `Monster` abstract class, status effects (burn, freeze), original Assignment 1 codebase |
+| [**Adrian Deo**](https://github.com/Adrian-Deo) | Controls and player mechanics, all bullet types and the `AnimatedBullet` class, bullet-monster interaction logic, underground background and pack system, UI buttons, `SolidObjectManager` level design, `GameWindow` rework |
+| [**Josiah Alexis**](https://github.com/JOSIAHTHEPROGRAMMER) | Player and monster animations, `WaveManager`, `BackgroundManager` parallax, `Treasure`, portals and fireballs, `Monster` abstract class, status effects (burn, freeze), original Assignment 1 codebase |
 
 ---
 
