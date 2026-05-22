@@ -3,7 +3,7 @@
 ![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Swing](https://img.shields.io/badge/GUI-Java%20Swing-5382A1?style=for-the-badge&logo=java&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=for-the-badge)
-![License](https://img.shields.io/badge/License-Academic-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 ![Contributors](https://img.shields.io/badge/Contributors-2-orange?style=for-the-badge)
 ![Waves](https://img.shields.io/badge/Waves-15-red?style=for-the-badge)
 ![Bullet Types](https://img.shields.io/badge/Bullet%20Types-9-purple?style=for-the-badge)
@@ -42,7 +42,7 @@ The game ships with nine enemy types, nine projectile types with distinct mechan
 | Contributor | Responsibilities |
 |---|---|
 | **Adrian Deo** | Controls and player mechanics, all bullet types and the `AnimatedBullet` class, bullet-monster interaction logic, underground background and pack system, UI buttons, `SolidObjectManager` level design, `GameWindow` rework |
-| **Josiah Alexis**  | Player and monster animations, `WaveManager`, `BackgroundManager` parallax, `Treasure`, portals and fireballs, `Monster` abstract class, status effects (burn, freeze), original Assignment 1 codebase |
+| **Josiah Alexis** | Player and monster animations, `WaveManager`, `BackgroundManager` parallax, `Treasure`, portals and fireballs, `Monster` abstract class, status effects (burn, freeze), original Assignment 1 codebase |
 
 ---
 
@@ -303,3 +303,11 @@ The game window opens at 960×540 pixels and is not resizable. All assets are lo
 | `ghost_die.wav` | [freesound.org](https://freesound.org/people/guilledcf/sounds/832370/) |
 | `snake_die.wav` | [freesound.org](https://freesound.org/search/?q=snake) |
 | `background.wav` | [incompetech.com — Dentaneosuchus Hunt](https://incompetech.com/music/royalty-free/music.html) |
+
+---
+
+## License
+
+The source code in this repository is released under the [MIT License](LICENSE).
+
+The third-party sprites and audio files located in the `images/` and `sounds/` directories are not covered by this license. Each asset retains the terms of its original author or distributor, as listed in the [Asset Credits](#asset-credits) section above.
